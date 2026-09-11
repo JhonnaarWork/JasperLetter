@@ -1,0 +1,1699 @@
+<div class="app-layout">
+  <!-- Barra superior / Header -->
+  <header class="app-header">
+    <!-- Grupo Izquierdo: Marca Corporativa -->
+    <div class="header-left">
+      <div class="header-brand">
+        <img src="/assets/images/minsait-logo.png" alt="onesait customers" class="brand-logo-img" />
+        <div class="brand-divider"></div>
+        <div class="brand-text">
+          <h1 class="brand-title">{{ t('brand.title') }}</h1>
+          <span class="brand-subtitle">{{ t('brand.subtitle') }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grupo Central: Selector de Carta, Formato y Vistas (Centrado) -->
+    <div class="header-center">
+      <!-- Botón Crear Carta -->
+      <button
+        type="button"
+        class="btn btn-create-letter"
+        (click)="requestCreateLetter()"
+        [title]="t('modal.createLetterDesc')"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>{{ t('header.createLetter') }}</span>
+      </button>
+
+      <!-- Selector de Carta o Plantilla -->
+      <label class="control-group">
+        <span class="control-label">{{ t('header.document') }}</span>
+        <select
+          class="select-input"
+          [ngModel]="currentSelection()"
+          (ngModelChange)="requestChangeSelection($event)"
+        >
+          @if (!currentSelection()) {
+            <option value="" disabled selected>{{ t('header.selectPlaceholder') }}</option>
+          }
+          @if (resourceLetters().length > 0) {
+            <optgroup [label]="t('header.lettersGroup')">
+              @for (letter of resourceLetters(); track letter.id) {
+                <option [value]="'resource:' + letter.id">
+                  {{ letter.name }} ({{ letter.format }})
+                </option>
+              }
+            </optgroup>
+          }
+          <optgroup [label]="t('header.samplesGroup')">
+            @for (sample of samples; track sample.id) {
+              <option [value]="'sample:' + sample.id">{{ sample.name }}</option>
+            }
+          </optgroup>
+        </select>
+      </label>
+
+      <!-- Selector de Formato JR6 / JR7 -->
+      <div class="format-badge-box" [title]="t('header.formatTooltip')">
+        <span class="format-label">{{ t('header.format') }}</span>
+        <div class="format-toggle">
+          <button
+            type="button"
+            class="fmt-btn"
+            [class.active]="letterFormat() === 'JR6'"
+            (click)="setLetterFormat('JR6')"
+            [title]="t('header.formatJr6Tooltip')"
+          >
+            JR6
+          </button>
+          <button
+            type="button"
+            class="fmt-btn"
+            [class.active]="letterFormat() === 'JR7'"
+            (click)="setLetterFormat('JR7')"
+            [title]="t('header.formatJr7Tooltip')"
+          >
+            JR7
+          </button>
+        </div>
+      </div>
+
+      <!-- Conmutador de modo de vista -->
+      <div class="view-mode-group">
+        <button
+          type="button"
+          class="mode-btn"
+          [class.active]="viewMode() === 'editor'"
+          (click)="setViewMode('editor')"
+          [title]="t('header.viewEditorTooltip')"
+        >
+          {{ t('header.viewEditor') }}
+        </button>
+        <button
+          type="button"
+          class="mode-btn"
+          [class.active]="viewMode() === 'split'"
+          (click)="setViewMode('split')"
+          [title]="t('header.viewSplitTooltip')"
+        >
+          {{ t('header.viewSplit') }}
+        </button>
+        <button
+          type="button"
+          class="mode-btn"
+          [class.active]="viewMode() === 'preview'"
+          (click)="setViewMode('preview')"
+          [title]="t('header.viewPdfTooltip')"
+        >
+          {{ t('header.viewPdf') }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Grupo Derecho: Acciones (Previsualizar, Guardar), Idioma y Marca Indra -->
+    <div class="header-right">
+      <!-- Acciones principales -->
+      <div class="header-actions">
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="onPreviewClick()"
+          [disabled]="loading()"
+          [title]="t('header.previewTooltip')"
+        >
+          @if (loading()) {
+            <span class="spinner-inline"></span>
+            <span>{{ t('header.generating') }}</span>
+          } @else {
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>{{ t('header.preview') }}</span>
+          }
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-secondary"
+          [class.btn-has-changes]="hasUnsavedChanges()"
+          [disabled]="!selectedLetterId() || saving()"
+          (click)="openSaveConfirmModal()"
+          [title]="selectedLetterId() ? (hasUnsavedChanges() ? 'Guardar componentes modificados (Ctrl+S)' : 'Sin cambios pendientes (Ctrl+S)') : t('header.saveTooltipDisabled')"
+        >
+          @if (saving()) {
+            <span class="spinner-inline"></span>
+            <span>{{ t('header.saving') }}</span>
+          } @else {
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span>{{ t('header.save') }}</span>
+            @if (dirtyCount() > 0) {
+              <span class="save-dirty-badge" title="Componentes con cambios sin guardar">{{ dirtyCount() }}</span>
+            }
+          }
+        </button>
+      </div>
+
+      <!-- Selector de Idioma (ES / EN) al estilo inCMS -->
+      <div class="lang-toggle-box" [title]="t('header.langTooltip')">
+        <button
+          type="button"
+          class="lang-btn"
+          [class.active]="currentLang() === 'es'"
+          (click)="setLanguage('es')"
+          title="Español"
+        >
+          ES
+        </button>
+        <button
+          type="button"
+          class="lang-btn"
+          [class.active]="currentLang() === 'en'"
+          (click)="setLanguage('en')"
+          title="English"
+        >
+          EN
+        </button>
+      </div>
+
+      <!-- Logotipo Corporativo Indra -->
+      <div class="header-corporate">
+        <img src="/assets/images/app-logo.png" alt="Indra" class="corporate-logo-img" title="Indra Minsait" />
+      </div>
+    </div>
+  </header>
+
+  <!-- Banner de notificación de guardado -->
+  @if (saveStatus().message) {
+    <div
+      class="toast-banner"
+      [class.toast-success]="saveStatus().type === 'success'"
+      [class.toast-error]="saveStatus().type === 'error'"
+    >
+      <div class="toast-content">
+        <span>{{ saveStatus().message }}</span>
+      </div>
+      <button type="button" class="toast-close" (click)="saveStatus.set({ type: null, message: null })">×</button>
+    </div>
+  }
+
+  <!-- Overlay de carga al cambiar de carta -->
+  @if (switchingLetter()) {
+    <div class="letter-switching-overlay">
+      <div class="switching-card">
+        <div class="switching-spinner"></div>
+        <p class="switching-text">{{ switchingMessage() || t('switching.loading') }}</p>
+      </div>
+    </div>
+  }
+
+  <!-- Contenido principal -->
+  <main class="app-main" [class]="'mode-' + viewMode()" [class.main-welcome]="!selectedLetterId() && !selectedSampleId()">
+    @if (!selectedLetterId() && !selectedSampleId()) {
+      <div class="welcome-container">
+        <div class="welcome-card">
+          <div class="welcome-icon-box">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#0F5B9E" stroke-width="1.8">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <h2 class="welcome-title">{{ t('welcome.title') }}</h2>
+          <p class="welcome-subtitle">{{ t('welcome.subtitle') }}</p>
+
+          <div class="welcome-cta">
+            <button
+              type="button"
+              class="btn btn-primary btn-welcome-create"
+              (click)="openCreateLetterModal()"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>{{ t('welcome.createBtn') }}</span>
+            </button>
+
+            @if (resourceLetters().length > 0) {
+              <div class="welcome-recent-letters">
+                <span class="recent-label">O selecciona una carta del repositorio:</span>
+                <div class="recent-badges">
+                  @for (letter of resourceLetters(); track letter.id) {
+                    <button
+                      type="button"
+                      class="recent-letter-pill"
+                      (click)="onSelectionChange('resource:' + letter.id)"
+                      [title]="'Abrir carta ' + letter.name"
+                    >
+                      <span class="pill-icon">📁</span>
+                      <span class="pill-name">{{ letter.name }}</span>
+                      <span class="pill-format">{{ letter.format }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="welcome-features-grid">
+            <div class="feature-item">
+              <div class="feature-icon">🎨</div>
+              <h4>{{ t('welcome.feature1Title') }}</h4>
+              <p>{{ t('welcome.feature1Desc') }}</p>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">🔌</div>
+              <h4>{{ t('welcome.feature2Title') }}</h4>
+              <p>{{ t('welcome.feature2Desc') }}</p>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">⚡</div>
+              <h4>{{ t('welcome.feature3Title') }}</h4>
+              <p>{{ t('welcome.feature3Desc') }}</p>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">💾</div>
+              <h4>{{ t('welcome.feature4Title') }}</h4>
+              <p>{{ t('welcome.feature4Desc') }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <!-- Panel Izquierdo: Editor Visual, Datos XML o Código JRXML -->
+      @if (viewMode() === 'split' || viewMode() === 'editor') {
+        <section class="editor-pane">
+          <!-- Pestañas de herramientas del panel izquierdo -->
+          <div class="pane-header-tabs">
+            <div class="left-tab-group">
+              <button
+                type="button"
+                class="left-tab-btn"
+                [class.active]="leftTab() === 'editor'"
+                (click)="setLeftTab('editor')"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="3" y1="9" x2="21" y2="9"></line>
+                  <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+                <span>{{ t('tabs.designer') }}</span>
+                @if (isJrxmlDirty()) {
+                  <span class="tab-dirty-indicator" title="Cambios sin guardar en la plantilla JRXML">●</span>
+                }
+              </button>
+
+              <button
+                type="button"
+                class="left-tab-btn"
+                [class.active]="leftTab() === 'jrxmlCode'"
+                (click)="setLeftTab('jrxmlCode')"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="16 18 22 12 16 6"></polyline>
+                  <polyline points="8 6 2 12 8 18"></polyline>
+                </svg>
+                <span>{{ t('tabs.jrxmlCode') }}</span>
+                @if (isJrxmlDirty()) {
+                  <span class="tab-dirty-indicator" title="Cambios sin guardar en el código JRXML">●</span>
+                }
+              </button>
+
+              @if (selectedLetterId()) {
+                <!-- 3. Data Adapter primero -->
+                <button
+                  type="button"
+                  class="left-tab-btn"
+                  [class.active]="leftTab() === 'dataAdapter'"
+                  (click)="setLeftTab('dataAdapter')"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                  </svg>
+                  <span>{{ t('tabs.dataAdapter') }}</span>
+                  @if (isDataAdapterDirty()) {
+                    <span class="tab-dirty-indicator" title="Cambios sin guardar en el Data Adapter">●</span>
+                  }
+                  @if (dataAdapter()) {
+                    <span
+                      class="data-connected-badge"
+                      [class.badge-connected]="isDataAdapterConnected()"
+                      [class.badge-disconnected]="!isDataAdapterConnected()"
+                      [title]="isDataAdapterConnected() ? t('tabs.adapterConnectedTooltip') : t('tabs.adapterDisconnectedTooltip')"
+                    >
+                      {{ isDataAdapterConnected() ? t('tabs.connected') : t('tabs.disconnected') }}
+                    </span>
+                  }
+                </button>
+
+                <!-- 4. Datos XML luego -->
+                <button
+                  type="button"
+                  class="left-tab-btn"
+                  [class.active]="leftTab() === 'xmlData'"
+                  (click)="setLeftTab('xmlData')"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                  </svg>
+                  <span>{{ t('tabs.xmlData') }}</span>
+                  @if (isXmlDataDirty()) {
+                    <span class="tab-dirty-indicator" title="Cambios sin guardar en los Datos XML">●</span>
+                  }
+                  @if (selectedLetterId()) {
+                    <span
+                      class="data-connected-badge"
+                      [class.badge-connected]="isDataAdapterConnected()"
+                      [class.badge-disconnected]="!isDataAdapterConnected()"
+                      [title]="isDataAdapterConnected() ? t('tabs.connectedTooltip') : t('tabs.disconnectedTooltip')"
+                    >
+                      {{ isDataAdapterConnected() ? t('tabs.connected') : t('tabs.disconnected') }}
+                    </span>
+                  }
+                </button>
+              }
+            </div>
+
+          <div class="left-tab-meta">
+            @if (selectedLetterId()) {
+              <span class="file-path-badge">resources/reports/{{ selectedLetterId() }}</span>
+            }
+          </div>
+        </div>
+
+        <!-- Vista 1: Editor Visual ngx-jrxml-editor -->
+        @if (leftTab() === 'editor') {
+          <div class="editor-host">
+            <lib-jasper-editor
+              #editorComp
+              [jrxml]="jrxml()"
+              (jrxmlChange)="onJrxmlChange($event)"
+            />
+          </div>
+        }
+
+        <!-- Vista 2: Editor de Datos XML de la Carta -->
+        @if (leftTab() === 'xmlData') {
+          <div class="code-view-container">
+            <app-xml-code-editor
+              [code]="xmlData()"
+              (codeChange)="onXmlDataChange($event)"
+              [filename]="dataAdapterModel().location || (selectedLetterId() ? 'resources/data/xml/' + selectedLetterId() + '.xml' : 'data.xml')"
+              [subtitle]="t('toolbar.xmlRealtimeNote')"
+              [placeholder]="t('toolbar.xmlPlaceholder')"
+              [extraActionsTemplate]="restoreXmlDataTpl"
+            ></app-xml-code-editor>
+
+            <ng-template #restoreXmlDataTpl>
+              <button
+                type="button"
+                class="tb-btn"
+                (click)="openSelectXmlDataModal()"
+                title="Seleccionar o crear otro archivo de datos XML"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <span>📂 Cambiar / Crear XML...</span>
+              </button>
+
+              <button
+                type="button"
+                class="tb-btn"
+                (click)="resetXmlData()"
+                [title]="t('toolbar.restoreOriginalTooltip')"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                  <path d="M3 3v5h5"></path>
+                </svg>
+                <span>{{ t('toolbar.restoreOriginal') }}</span>
+              </button>
+            </ng-template>
+          </div>
+        }
+
+        <!-- Vista 3: Editor directo de Código JRXML -->
+        @if (leftTab() === 'jrxmlCode') {
+          <div class="code-view-container">
+            <app-xml-code-editor
+              [code]="jrxml()"
+              (codeChange)="onJrxmlChange($event)"
+              [filename]="selectedLetterId() ? selectedLetterId() + '.jrxml' : 'report.jrxml'"
+              [formatBadge]="letterFormat()"
+              [subtitle]="t('toolbar.bidirectionalNote')"
+            ></app-xml-code-editor>
+          </div>
+        }
+
+        <!-- Vista 4: Editor de Data Adapter de la Carta (Formulario e Interfaz + XML Plano) -->
+        @if (leftTab() === 'dataAdapter') {
+          <div class="code-view-container da-container">
+            <div class="code-view-toolbar">
+              <div class="code-toolbar-info">
+                <strong>{{ t('toolbar.adapterFile') }}</strong>
+                <code>resources/reports/{{ selectedLetterId() }}/xmlDataAdapter.xml</code>
+                <span class="adapter-note">{{ t('toolbar.adapterNote') }}</span>
+              </div>
+
+              <!-- Conmutador de Modo: Formulario (Interfaz) vs Código XML Plano -->
+              <div class="da-toolbar-actions">
+                <div class="da-mode-toggle" [title]="t('da.subtitle')">
+                  <button
+                    type="button"
+                    class="da-mode-btn"
+                    [class.active]="dataAdapterMode() === 'form'"
+                    (click)="setDataAdapterMode('form')"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="3" y1="9" x2="21" y2="9"></line>
+                      <line x1="9" y1="21" x2="9" y2="9"></line>
+                    </svg>
+                    <span>{{ t('da.modeForm') }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="da-mode-btn"
+                    [class.active]="dataAdapterMode() === 'xml'"
+                    (click)="setDataAdapterMode('xml')"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="16 18 22 12 16 6"></polyline>
+                      <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                    <span>{{ t('da.modeXml') }}</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  class="btn-mini btn-test-adapter"
+                  (click)="runDataAdapterTest()"
+                  [disabled]="testingDataAdapter()"
+                  [title]="t('da.testTooltip')"
+                >
+                  @if (testingDataAdapter()) {
+                    <span class="spinner-inline"></span>
+                    <span>{{ t('da.testing') }}</span>
+                  } @else {
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    <span>{{ t('da.testBtn') }}</span>
+                  }
+                </button>
+
+                <button
+                  type="button"
+                  class="btn-mini btn-adapter-select"
+                  (click)="openSelectAdapterModal()"
+                  title="Cambiar o vincular otro Data Adapter"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                  </svg>
+                  <span>Cambiar Adapter...</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="btn-mini"
+                  (click)="resetDataAdapter()"
+                  [title]="t('toolbar.restoreOriginalTooltip')"
+                >
+                  {{ t('toolbar.restoreOriginal') }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Opción 1: Interfaz con campos específicos estilo Jaspersoft Studio -->
+            @if (dataAdapterMode() === 'form') {
+              <div class="da-form-wrapper">
+                <div class="da-form-content">
+                  <!-- Cabecera descriptiva del adaptador -->
+                  <div class="da-header-banner">
+                    <div class="da-header-icon">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E6C99" stroke-width="2">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                      </svg>
+                    </div>
+                    <div class="da-header-text">
+                      <h4>{{ t('da.title') }}</h4>
+                      <p>{{ t('da.subtitle') }}</p>
+                    </div>
+                    <div class="da-class-badge">
+                      <span>XmlDataAdapterImpl</span>
+                    </div>
+                  </div>
+
+                  <!-- Bloque 1: Identificación y Archivo de Datos -->
+                  <div class="da-card">
+                    <div class="da-card-title">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                      </svg>
+                      <span>{{ t('da.sectionGeneral') }}</span>
+                    </div>
+
+                    <div class="da-grid-2">
+                      <!-- Nombre del adaptador -->
+                      <div class="da-field-group">
+                        <label class="da-label" for="da-name">
+                          {{ t('da.nameLabel') }} <span class="da-req">*</span>
+                        </label>
+                        <input
+                          id="da-name"
+                          type="text"
+                          class="da-input"
+                          [ngModel]="dataAdapterModel().name"
+                          (ngModelChange)="updateDataAdapterField('name', $event)"
+                          placeholder="xmlDataAdapter_ETIPLET..."
+                        />
+                        <span class="da-hint">{{ t('da.nameHint') }}</span>
+                      </div>
+
+                      <!-- Tipo de Localizador -->
+                      <div class="da-field-group">
+                        <label class="da-label" for="da-loctype">
+                          {{ t('da.locationTypeLabel') }}
+                        </label>
+                        <select
+                          id="da-loctype"
+                          class="da-select"
+                          [ngModel]="dataAdapterModel().locationType"
+                          (ngModelChange)="updateDataAdapterField('locationType', $event)"
+                        >
+                          <option value="repositoryDataLocation">repositoryDataLocation (Relativo / Repositorio)</option>
+                          <option value="fileDataLocation">fileDataLocation (Ruta directa de archivo)</option>
+                          <option value="standardDataLocation">standardDataLocation (Estándar)</option>
+                        </select>
+                        <span class="da-hint">xsi:type del elemento dataFile</span>
+                      </div>
+                    </div>
+
+                    <!-- Ruta de archivo XML -->
+                    <div class="da-field-group da-full-width">
+                      <div class="da-label-with-action">
+                        <label class="da-label" for="da-location">
+                          {{ t('da.locationLabel') }} <span class="da-req">*</span>
+                        </label>
+                        <div class="da-label-actions">
+                          @if (selectedLetterId()) {
+                            <button
+                              type="button"
+                              class="da-link-btn"
+                              (click)="suggestStandardXmlPath()"
+                              [title]="t('da.quickXmlPathHint', selectedLetterId()!)"
+                            >
+                              ⚡ {{ t('da.quickXmlPath') }}
+                            </button>
+                          }
+                          <button
+                            type="button"
+                            class="da-link-btn"
+                            (click)="openSelectXmlDataModal()"
+                            title="Seleccionar o crear archivo de datos XML"
+                          >
+                            📂 Cambiar / Crear XML...
+                          </button>
+                        </div>
+                      </div>
+                      <input
+                        id="da-location"
+                        type="text"
+                        class="da-input code-font"
+                        [ngModel]="dataAdapterModel().location"
+                        (ngModelChange)="updateDataAdapterField('location', $event)"
+                        placeholder="src\main\resources\data\xml\ETIPLET... o /data/xml/..."
+                      />
+                      <span class="da-hint">{{ t('da.locationHint') }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Bloque 2: Parámetros de Conexión XML -->
+                  <div class="da-card">
+                    <div class="da-card-title">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                      </svg>
+                      <span>{{ t('da.sectionConfig') }}</span>
+                    </div>
+
+                    <div class="da-grid-2">
+                      <!-- Usar conexión -->
+                      <label class="da-checkbox-card">
+                        <input
+                          type="checkbox"
+                          class="da-checkbox"
+                          [ngModel]="dataAdapterModel().useConnection"
+                          (ngModelChange)="updateDataAdapterField('useConnection', $event)"
+                        />
+                        <div class="da-checkbox-text">
+                          <span class="da-checkbox-title">{{ t('da.useConnectionLabel') }}</span>
+                          <span class="da-checkbox-desc">{{ t('da.useConnectionHint') }}</span>
+                        </div>
+                      </label>
+
+                      <!-- Sensible a Namespace -->
+                      <label class="da-checkbox-card">
+                        <input
+                          type="checkbox"
+                          class="da-checkbox"
+                          [ngModel]="dataAdapterModel().namespaceAware"
+                          (ngModelChange)="updateDataAdapterField('namespaceAware', $event)"
+                        />
+                        <div class="da-checkbox-text">
+                          <span class="da-checkbox-title">{{ t('da.namespaceAwareLabel') }}</span>
+                          <span class="da-checkbox-desc">{{ t('da.namespaceAwareHint') }}</span>
+                        </div>
+                      </label>
+                    </div>
+
+                    <!-- selectExpression XPath -->
+                    <div class="da-field-group da-full-width" style="margin-top: 10px;">
+                      <label class="da-label" for="da-selectexpr">
+                        {{ t('da.selectExprLabel') }}
+                      </label>
+                      <input
+                        id="da-selectexpr"
+                        type="text"
+                        class="da-input code-font"
+                        [ngModel]="dataAdapterModel().selectExpression"
+                        (ngModelChange)="updateDataAdapterField('selectExpression', $event)"
+                        [placeholder]="t('da.selectExprPlaceholder')"
+                      />
+                      <span class="da-hint">{{ t('da.selectExprHint') }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Bloque 3: Configuración Regional y Zona Horaria -->
+                  <div class="da-card">
+                    <div class="da-card-title">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                      </svg>
+                      <span>{{ t('da.sectionLocale') }}</span>
+                    </div>
+
+                    <div class="da-grid-2">
+                      <!-- Locale -->
+                      <div class="da-field-group">
+                        <label class="da-label" for="da-locale">
+                          {{ t('da.localeLabel') }}
+                        </label>
+                        <div class="da-input-combo">
+                          <input
+                            id="da-locale"
+                            type="text"
+                            class="da-input"
+                            [ngModel]="dataAdapterModel().locale"
+                            (ngModelChange)="updateDataAdapterField('locale', $event)"
+                            placeholder="es_ES"
+                          />
+                          <select
+                            class="da-quick-select"
+                            (change)="updateDataAdapterField('locale', $any($event.target).value)"
+                          >
+                            <option value="" disabled selected>Presets</option>
+                            <option value="es_ES">es_ES (España)</option>
+                            <option value="es_UY">es_UY (Uruguay)</option>
+                            <option value="es_AR">es_AR (Argentina)</option>
+                            <option value="es_CO">es_CO (Colombia)</option>
+                            <option value="en_US">en_US (USA)</option>
+                            <option value="en_GB">en_GB (UK)</option>
+                          </select>
+                        </div>
+                        <span class="da-hint">Formato de idioma y país (ej: es_ES)</span>
+                      </div>
+
+                      <!-- Time Zone -->
+                      <div class="da-field-group">
+                        <label class="da-label" for="da-timezone">
+                          {{ t('da.timeZoneLabel') }}
+                        </label>
+                        <div class="da-input-combo">
+                          <input
+                            id="da-timezone"
+                            type="text"
+                            class="da-input"
+                            [ngModel]="dataAdapterModel().timeZone"
+                            (ngModelChange)="updateDataAdapterField('timeZone', $event)"
+                            placeholder="America/Montevideo"
+                          />
+                          <select
+                            class="da-quick-select"
+                            (change)="updateDataAdapterField('timeZone', $any($event.target).value)"
+                          >
+                            <option value="" disabled selected>Presets</option>
+                            <option value="America/Montevideo">America/Montevideo (Uruguay)</option>
+                            <option value="America/Bogota">America/Bogota (Colombia)</option>
+                            <option value="America/Argentina/Buenos_Aires">America/Argentina/Buenos_Aires</option>
+                            <option value="America/Santiago">America/Santiago (Chile)</option>
+                            <option value="Europe/Madrid">Europe/Madrid (España)</option>
+                            <option value="UTC">UTC</option>
+                          </select>
+                        </div>
+                        <span class="da-hint">Zona horaria de referencia para fechas</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- Opción 2: Código XML (tal como en Jaspersoft Studio pestaña Source) -->
+            @if (dataAdapterMode() === 'xml') {
+              <div class="code-editor-wrapper da-xml-editor-wrapper">
+                <app-xml-code-editor
+                  [code]="dataAdapter()"
+                  (codeChange)="onDataAdapterChange($event)"
+                  [filename]="selectedLetterId() ? 'resources/reports/' + selectedLetterId() + '/xmlDataAdapter.xml' : 'xmlDataAdapter.xml'"
+                  [placeholder]="t('toolbar.adapterPlaceholder')"
+                ></app-xml-code-editor>
+              </div>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    <!-- Panel Derecho: Previsualizador PDF y Datos de Prueba -->
+    @if (viewMode() === 'split' || viewMode() === 'preview') {
+      <section class="preview-pane">
+        <!-- Pestañas del panel derecho -->
+        <div class="preview-nav-bar">
+          <div class="tab-group">
+            <button
+              type="button"
+              class="tab-btn"
+              [class.active]="rightTab() === 'preview'"
+              (click)="setRightTab('preview')"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <span>{{ t('preview.tabPdf') }}</span>
+            </button>
+
+            @if (!selectedLetterId()) {
+              <button
+                type="button"
+                class="tab-btn"
+                [class.active]="rightTab() === 'params'"
+                (click)="setRightTab('params')"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="4" y1="21" x2="4" y2="14"></line>
+                  <line x1="4" y1="10" x2="4" y2="3"></line>
+                  <line x1="12" y1="21" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12" y2="3"></line>
+                  <line x1="20" y1="21" x2="20" y2="16"></line>
+                  <line x1="20" y1="12" x2="20" y2="3"></line>
+                  <line x1="1" y1="14" x2="7" y2="14"></line>
+                  <line x1="9" y1="8" x2="15" y2="8"></line>
+                  <line x1="17" y1="16" x2="23" y2="16"></line>
+                </svg>
+                <span>{{ t('preview.tabParams') }}</span>
+                <span class="counter-badge">{{ parameterEntries().length }}</span>
+              </button>
+            }
+          </div>
+
+          <div class="preview-tools">
+            <button
+              type="button"
+              class="icon-action-btn"
+              (click)="generatePreview()"
+              [title]="t('preview.refreshTooltip')"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Banner de Error si falla la compilación -->
+        @if (errorMessage()) {
+          <div class="error-banner">
+            <div class="error-icon">⚠️</div>
+            <div class="error-content">
+              <strong>{{ t('preview.errorHeader') }}</strong>
+              <p>{{ errorMessage() }}</p>
+            </div>
+          </div>
+        }
+
+        <!-- Pestaña 1: Visor PDF -->
+        @if (rightTab() === 'preview') {
+          <div class="pdf-container">
+            @if (loading()) {
+              <div class="pdf-loading-overlay">
+                <div class="spinner"></div>
+                <p>{{ t('preview.loadingOverlay') }}</p>
+              </div>
+            }
+
+            @if (pdfUrl()) {
+              <iframe
+                [src]="pdfUrl()"
+                class="pdf-frame"
+                title="PDF"
+              ></iframe>
+            } @else if (!loading() && !errorMessage()) {
+              <div class="empty-state">
+                <p>{{ t('preview.emptyState') }}</p>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Pestaña 2: Formulario de Parámetros de Prueba -->
+        @if (rightTab() === 'params') {
+          <div class="params-container">
+            <div class="params-intro">
+              <h3>{{ t('params.title') }}</h3>
+              <p>{{ t('params.description') }}</p>
+            </div>
+
+            <div class="params-list">
+              @for (param of parameterEntries(); track param.key) {
+                <div class="param-card">
+                  <div class="param-header">
+                    <span class="param-name">{{ '$P{' + param.key + '}' }}</span>
+                    <button
+                      type="button"
+                      class="remove-param-btn"
+                      (click)="removeParameter(param.key)"
+                      [title]="t('params.removeTooltip')"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  @if (param.key === 'CUERPO' || param.value.length > 60) {
+                    <textarea
+                      class="param-textarea"
+                      rows="3"
+                      [ngModel]="param.value"
+                      (ngModelChange)="onParameterChange(param.key, $event)"
+                    ></textarea>
+                  } @else {
+                    <input
+                      type="text"
+                      class="param-input"
+                      [ngModel]="param.value"
+                      (ngModelChange)="onParameterChange(param.key, $event)"
+                    />
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Agregar nuevo parámetro dinámico -->
+            <div class="add-param-box">
+              <h4>{{ t('params.addTitle') }}</h4>
+              <div class="add-param-form">
+                <input
+                  #newKeyInput
+                  type="text"
+                  [placeholder]="t('params.namePlaceholder')"
+                  class="add-input key-input"
+                />
+                <input
+                  #newValInput
+                  type="text"
+                  [placeholder]="t('params.valuePlaceholder')"
+                  class="add-input val-input"
+                />
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  (click)="
+                    addCustomParameter(newKeyInput.value, newValInput.value);
+                    newKeyInput.value = '';
+                    newValInput.value = '';
+                  "
+                >
+                  {{ t('params.addBtn') }}
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </section>
+    }
+  }
+  </main>
+
+  <!-- Modal de Edición de Texto / Expresión -->
+  @if (textModalOpen()) {
+    <div class="modal-backdrop" (click)="closeTextModal()" (keydown.escape)="closeTextModal()">
+      <div class="text-editor-modal" (click)="$event.stopPropagation()">
+        <!-- Encabezado del Modal -->
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <div
+              class="modal-icon-badge"
+              [class.badge-static]="textModalKind() === 'staticText'"
+              [class.badge-expr]="textModalKind() === 'textField'"
+            >
+              @if (textModalKind() === 'staticText') {
+                <span class="type-icon">T</span>
+              } @else {
+                <span class="type-icon">fx</span>
+              }
+            </div>
+            <div>
+              <h3 class="modal-title">
+                {{ textModalKind() === 'staticText' ? t('modal.editTextTitle') : t('modal.editExprTitle') }}
+              </h3>
+              <span class="modal-subtitle">
+                {{ textModalKind() === 'staticText' ? t('modal.staticTextDesc') : t('modal.textFieldDesc') }}
+              </span>
+            </div>
+          </div>
+          <button type="button" class="modal-close-btn" (click)="closeTextModal()" title="Cerrar (Esc)">×</button>
+        </div>
+
+        <!-- Cuerpo del Modal -->
+        <div class="modal-body">
+          @if (textModalKind() === 'textField') {
+            <!-- Accesos rápidos para expresiones -->
+            <div class="quick-inserts">
+              <span class="quick-insert-label">{{ t('modal.quickInsert') }}</span>
+              <button type="button" class="insert-pill" (click)="insertIntoExpression('$F{')">+ Campo ($F&#123;&#125;)</button>
+              <button type="button" class="insert-pill" (click)="insertIntoExpression('$P{')">+ Parámetro ($P&#123;&#125;)</button>
+              <button type="button" class="insert-pill" (click)="insertIntoExpression('$V{')">+ Variable ($V&#123;&#125;)</button>
+              <button type="button" class="insert-pill" (click)="insertIntoExpression('&quot; + &quot;\\n&quot; + &quot;')">+ Salto (\n)</button>
+            </div>
+          }
+
+          <!-- Barra del Corrector Ortográfico con Selector de Idioma -->
+          <div class="spellcheck-bar">
+            <div class="spellcheck-lang-picker">
+              <span class="spellcheck-icon" [title]="t('modal.correctorLabel')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                  <line x1="9" y1="7" x2="15" y2="7"></line>
+                  <line x1="9" y1="11" x2="13" y2="11"></line>
+                </svg>
+              </span>
+              <span class="spellcheck-label">{{ t('modal.correctorLabel') }}:</span>
+              <div class="spell-lang-segmented">
+                <button
+                  type="button"
+                  class="spell-lang-btn"
+                  [class.active]="spellcheckLang() === 'es'"
+                  (click)="setSpellcheckLang('es')"
+                  [title]="t('modal.spellcheckEs')"
+                >
+                  🇪🇸 {{ t('modal.spellcheckEs') }}
+                </button>
+                <button
+                  type="button"
+                  class="spell-lang-btn"
+                  [class.active]="spellcheckLang() === 'en'"
+                  (click)="setSpellcheckLang('en')"
+                  [title]="t('modal.spellcheckEn')"
+                >
+                  🇬🇧 {{ t('modal.spellcheckEn') }}
+                </button>
+                <button
+                  type="button"
+                  class="spell-lang-btn btn-off"
+                  [class.active]="spellcheckLang() === 'off'"
+                  (click)="setSpellcheckLang('off')"
+                  [title]="t('modal.spellcheckOffTooltip')"
+                >
+                  ⊘ {{ t('modal.spellcheckOff') }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Indicador de estado del corrector -->
+            <div class="spellcheck-status">
+              @if (spellcheckLang() !== 'off') {
+                @if (spellErrors().length === 0) {
+                  <span class="spell-badge spell-badge-ok">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>{{ t('modal.noSpellingErrors') }}</span>
+                  </span>
+                } @else {
+                  <span class="spell-badge spell-badge-warn">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                      <line x1="12" y1="9" x2="12" y2="13"></line>
+                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <span>{{ spellErrors().length }} {{ spellErrors().length === 1 ? t('modal.errorFound') : t('modal.errorsFound') }}</span>
+                  </span>
+                }
+              } @else {
+                <span class="spell-badge spell-badge-off">
+                  <span>{{ t('modal.spellcheckDisabled') }}</span>
+                </span>
+              }
+            </div>
+          </div>
+
+          <div class="textarea-container">
+            <!-- Fondo de subrayado sincronizado (solo la línea roja ondulada, sin fondo rojo) -->
+            <div #backdropRef class="textarea-backdrop" [class.code-font]="textModalKind() === 'textField'">
+              <div class="backdrop-content" [innerHTML]="backdropHtml()"></div>
+            </div>
+
+            <textarea
+              #modalTextarea
+              class="modal-textarea"
+              [class.code-font]="textModalKind() === 'textField'"
+              [value]="textModalContent()"
+              (input)="onTextModalInput(modalTextarea.value)"
+              (scroll)="onTextareaScroll()"
+              (keydown)="onModalKeyDown($event)"
+              rows="12"
+              [placeholder]="t('modal.placeholder')"
+            ></textarea>
+          </div>
+
+          <div class="modal-stats">
+            <span class="stat-item">{{ getLineCount(textModalContent()) }} {{ t('modal.lines') }}</span>
+            <span class="stat-divider">•</span>
+            <span class="stat-item">{{ textModalContent().length }} {{ t('modal.chars') }}</span>
+            <span class="stat-tip">{{ t('modal.helperTip') }}</span>
+          </div>
+        </div>
+
+        <!-- Pie del Modal -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeTextModal()">
+            {{ t('modal.cancel') }}
+          </button>
+          <button type="button" class="btn btn-primary" (click)="saveTextModal()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>{{ t('modal.apply') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal de Resultado de Test de Data Adapter -->
+  @if (testResultModalOpen()) {
+    <div class="da-modal-overlay" (click)="closeTestModal()">
+      <div class="da-modal-dialog" (click)="$event.stopPropagation()">
+        <!-- Encabezado del Modal -->
+        <div class="da-modal-header" [class.success]="testResult()?.success" [class.error]="!testResult()?.success">
+          <div class="da-modal-header-icon">
+            @if (testResult()?.success) {
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            } @else {
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+            }
+          </div>
+          <div class="da-modal-header-title">
+            <h3>{{ t('da.testModalTitle') }}</h3>
+            <span class="da-modal-badge" [class.badge-success]="testResult()?.success" [class.badge-error]="!testResult()?.success">
+              {{ testResult()?.success ? t('da.testSuccessBadge') : t('da.testErrorBadge') }}
+            </span>
+          </div>
+          <button type="button" class="da-modal-close-btn" (click)="closeTestModal()">×</button>
+        </div>
+
+        <!-- Cuerpo del Modal -->
+        <div class="da-modal-body">
+          <div class="da-modal-message-box" [class.box-success]="testResult()?.success" [class.box-error]="!testResult()?.success">
+            <p>{{ testResult()?.message }}</p>
+          </div>
+
+          <!-- Tabla de Parámetros Verificados -->
+          <div class="da-test-table">
+            <div class="da-test-row">
+              <span class="da-test-label">{{ t('da.testParamAdapterName') }}:</span>
+              <span class="da-test-val"><code>{{ testResult()?.adapterName || '-' }}</code></span>
+            </div>
+
+            <div class="da-test-row">
+              <span class="da-test-label">{{ t('da.testParamLocation') }}:</span>
+              <span class="da-test-val"><code>{{ testResult()?.location || '-' }}</code></span>
+            </div>
+
+            <div class="da-test-row">
+              <span class="da-test-label">{{ t('da.testParamFileStatus') }}:</span>
+              <span class="da-test-val">
+                @if (testResult()?.fileExists) {
+                  <span class="tag-status-ok">✓ {{ t('da.testFileFound') }}</span>
+                  @if (testResult()?.fileSizeBytes) {
+                    <span class="tag-meta">({{ testResult()!.fileSizeBytes }} bytes)</span>
+                  }
+                } @else {
+                  <span class="tag-status-err">✗ {{ t('da.testFileNotFound') }}</span>
+                }
+              </span>
+            </div>
+
+            @if (testResult()?.fileExists) {
+              <div class="da-test-row">
+                <span class="da-test-label">{{ t('da.testParamXmlSyntax') }}:</span>
+                <span class="da-test-val">
+                  @if (testResult()?.xmlValid) {
+                    <span class="tag-status-ok">✓ {{ t('da.testXmlValid') }}</span>
+                    @if (testResult()?.rootElement) {
+                      <span class="tag-meta">(Raíz: &lt;{{ testResult()?.rootElement }}&gt;)</span>
+                    }
+                  } @else {
+                    <span class="tag-status-err">✗ {{ t('da.testXmlInvalid') }}</span>
+                  }
+                </span>
+              </div>
+
+              @if (testResult()?.selectExpression) {
+                <div class="da-test-row">
+                  <span class="da-test-label">{{ t('da.testParamXpath') }}:</span>
+                  <span class="da-test-val">
+                    <code>{{ testResult()?.selectExpression }}</code>
+                    <span class="tag-meta">({{ t('da.testParamXpathMatches', testResult()?.xpathMatches ?? 0) }})</span>
+                  </span>
+                </div>
+              }
+
+              <div class="da-test-row">
+                <span class="da-test-label">{{ t('da.testParamLocaleTz') }}:</span>
+                <span class="da-test-val">{{ testResult()?.locale }} • {{ testResult()?.timeZone }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Pie del Modal -->
+        <div class="da-modal-footer">
+          <button type="button" class="btn btn-primary da-modal-ok-btn" (click)="closeTestModal()">
+            {{ t('da.testClose') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 1: CREAR NUEVA CARTA DESDE CERO                                -->
+  <!-- ===================================================================== -->
+  @if (createLetterModalOpen()) {
+    <div class="da-modal-overlay" (click)="closeCreateLetterModal()">
+      <div class="da-modal-dialog create-letter-dialog" (click)="$event.stopPropagation()">
+        <div class="da-modal-header">
+          <div class="da-modal-header-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F5B9E" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+          </div>
+          <div class="da-modal-header-title">
+            <h3>{{ t('modal.createLetterTitle') }}</h3>
+            <span class="modal-dialog-subtitle">{{ t('modal.createLetterDesc') }}</span>
+          </div>
+          <button type="button" class="da-modal-close-btn" (click)="closeCreateLetterModal()">×</button>
+        </div>
+
+        <div class="da-modal-body">
+          @if (createLetterError()) {
+            <div class="da-modal-message-box box-error">
+              <p>{{ createLetterError() }}</p>
+            </div>
+          }
+
+          <div class="form-field-group">
+            <label class="form-label" for="new-letter-id">
+              {{ t('modal.letterIdLabel') }} <span class="da-req">*</span>
+            </label>
+            <input
+              id="new-letter-id"
+              type="text"
+              class="form-input code-font uppercase-input"
+              [ngModel]="newLetterId()"
+              (ngModelChange)="newLetterId.set($event)"
+              placeholder="Ej: ETIPLET004"
+              autofocus
+            />
+            <span class="form-hint">Se creará en <code>resources/reports/&#123;ID&#125;/&#123;ID&#125;.jrxml</code> con estructura estándar de inCMS.</span>
+          </div>
+
+          <div class="form-field-group">
+            <label class="form-label">{{ t('modal.formatLabel') }}</label>
+            <div class="format-options-row">
+              <label class="radio-card" [class.selected]="newLetterFormat() === 'JR6'">
+                <input
+                  type="radio"
+                  name="newLetterFormat"
+                  value="JR6"
+                  [checked]="newLetterFormat() === 'JR6'"
+                  (change)="newLetterFormat.set('JR6')"
+                />
+                <div class="radio-card-content">
+                  <strong>JasperReports 6 (Tradicional)</strong>
+                  <span>Recomendado para servidores de producción existentes</span>
+                </div>
+              </label>
+              <label class="radio-card" [class.selected]="newLetterFormat() === 'JR7'">
+                <input
+                  type="radio"
+                  name="newLetterFormat"
+                  value="JR7"
+                  [checked]="newLetterFormat() === 'JR7'"
+                  (change)="newLetterFormat.set('JR7')"
+                />
+                <div class="radio-card-content">
+                  <strong>JasperReports 7 (Moderno)</strong>
+                  <span>Formato con esquema moderno JasperReports 7</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-checkbox-group">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [checked]="newLetterCreateAdapter()"
+                (change)="newLetterCreateAdapter.set(!newLetterCreateAdapter())"
+              />
+              <span>{{ t('modal.createAdapterLabel') }}</span>
+            </label>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [checked]="newLetterCreateXml()"
+                (change)="newLetterCreateXml.set(!newLetterCreateXml())"
+              />
+              <span>{{ t('modal.createXmlLabel') }}</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="da-modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeCreateLetterModal()">
+            {{ t('modal.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="creatingLetter() || !newLetterId().trim()"
+            (click)="submitCreateLetter()"
+          >
+            @if (creatingLetter()) {
+              <span class="spinner-inline"></span>
+              <span>Creando...</span>
+            } @else {
+              <span>{{ t('modal.createBtn') }}</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 2: CONFIRMAR GUARDADO GRANULAR (CTRL+S / BOTÓN GUARDAR)         -->
+  <!-- ===================================================================== -->
+  @if (saveConfirmModalOpen()) {
+    <div class="da-modal-overlay" (click)="closeSaveConfirmModal()">
+      <div class="da-modal-dialog save-confirm-dialog" (click)="$event.stopPropagation()">
+        <div class="da-modal-header">
+          <div class="da-modal-header-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F5B9E" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+          </div>
+          <div class="da-modal-header-title">
+            <h3>{{ t('modal.saveConfirmTitle') }}</h3>
+            <span class="modal-dialog-subtitle">{{ t('modal.saveConfirmDesc') }}</span>
+          </div>
+          <button type="button" class="da-modal-close-btn" (click)="closeSaveConfirmModal()">×</button>
+        </div>
+
+        <div class="da-modal-body">
+          <div class="save-targets-list">
+            <!-- Item 1: Plantilla JRXML -->
+            <label class="save-target-item" [class.is-dirty]="isJrxmlDirty()">
+              <div class="target-check">
+                <input
+                  type="checkbox"
+                  [checked]="saveSelectJrxml()"
+                  (change)="saveSelectJrxml.set(!saveSelectJrxml())"
+                />
+              </div>
+              <div class="target-info">
+                <div class="target-header">
+                  <strong>Plantilla JRXML</strong>
+                  @if (isJrxmlDirty()) {
+                    <span class="badge-target-dirty">● {{ t('modal.statusModified') }}</span>
+                  } @else {
+                    <span class="badge-target-clean">{{ t('modal.statusUnchanged') }}</span>
+                  }
+                </div>
+                <span class="target-path">resources/reports/{{ selectedLetterId() }}/{{ selectedLetterId() }}.jrxml</span>
+              </div>
+            </label>
+
+            <!-- Item 2: Data Adapter -->
+            <label class="save-target-item" [class.is-dirty]="isDataAdapterDirty()">
+              <div class="target-check">
+                <input
+                  type="checkbox"
+                  [checked]="saveSelectDataAdapter()"
+                  (change)="saveSelectDataAdapter.set(!saveSelectDataAdapter())"
+                />
+              </div>
+              <div class="target-info">
+                <div class="target-header">
+                  <strong>Data Adapter XML</strong>
+                  @if (isDataAdapterDirty()) {
+                    <span class="badge-target-dirty">● {{ t('modal.statusModified') }}</span>
+                  } @else {
+                    <span class="badge-target-clean">{{ t('modal.statusUnchanged') }}</span>
+                  }
+                </div>
+                <span class="target-path">resources/reports/{{ selectedLetterId() }}/xmlDataAdapter.xml</span>
+              </div>
+            </label>
+
+            <!-- Item 3: Datos XML -->
+            <label class="save-target-item" [class.is-dirty]="isXmlDataDirty()">
+              <div class="target-check">
+                <input
+                  type="checkbox"
+                  [checked]="saveSelectXmlData()"
+                  (change)="saveSelectXmlData.set(!saveSelectXmlData())"
+                />
+              </div>
+              <div class="target-info">
+                <div class="target-header">
+                  <strong>Datos XML del Cliente</strong>
+                  @if (isXmlDataDirty()) {
+                    <span class="badge-target-dirty">● {{ t('modal.statusModified') }}</span>
+                  } @else {
+                    <span class="badge-target-clean">{{ t('modal.statusUnchanged') }}</span>
+                  }
+                </div>
+                <span class="target-path">{{ dataAdapterModel().location || ('resources/data/xml/' + selectedLetterId() + '.xml') }}</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="da-modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeSaveConfirmModal()">
+            {{ t('modal.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="saving() || (!saveSelectJrxml() && !saveSelectDataAdapter() && !saveSelectXmlData())"
+            (click)="confirmGranularSave()"
+          >
+            @if (saving()) {
+              <span class="spinner-inline"></span>
+              <span>Guardando...</span>
+            } @else {
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>{{ t('modal.saveConfirmBtn') }}</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 3: CAMBIOS SIN GUARDAR (GUARD DE NAVEGACIÓN)                    -->
+  <!-- ===================================================================== -->
+  @if (unsavedModalOpen()) {
+    <div class="da-modal-overlay">
+      <div class="da-modal-dialog unsaved-dialog" (click)="$event.stopPropagation()">
+        <div class="da-modal-header warning">
+          <div class="da-modal-header-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </div>
+          <div class="da-modal-header-title">
+            <h3>{{ t('modal.unsavedTitle') }}</h3>
+            <span class="modal-dialog-subtitle">{{ t('modal.unsavedDesc') }}</span>
+          </div>
+        </div>
+
+        <div class="da-modal-body">
+          <ul class="unsaved-items-summary">
+            @if (isJrxmlDirty()) {
+              <li>
+                <span class="dirty-bullet">●</span>
+                <strong>Plantilla JRXML</strong> ({{ selectedLetterId() }}.jrxml)
+              </li>
+            }
+            @if (isDataAdapterDirty()) {
+              <li>
+                <span class="dirty-bullet">●</span>
+                <strong>Data Adapter</strong> (xmlDataAdapter.xml)
+              </li>
+            }
+            @if (isXmlDataDirty()) {
+              <li>
+                <span class="dirty-bullet">●</span>
+                <strong>Datos XML</strong> ({{ dataAdapterModel().location || 'datos de cliente' }})
+              </li>
+            }
+          </ul>
+        </div>
+
+        <div class="da-modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="resolveUnsavedModal('cancel')">
+            {{ t('modal.unsavedCancelBtn') }}
+          </button>
+          <button type="button" class="btn btn-danger-outline" (click)="resolveUnsavedModal('discard')">
+            {{ t('modal.unsavedDiscardBtn') }}
+          </button>
+          <button type="button" class="btn btn-primary" (click)="resolveUnsavedModal('save')">
+            {{ t('modal.unsavedSaveBtn') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 4: SELECCIONAR DATA ADAPTER EXISTENTE                          -->
+  <!-- ===================================================================== -->
+  @if (selectAdapterModalOpen()) {
+    <div class="da-modal-overlay" (click)="closeSelectAdapterModal()">
+      <div class="da-modal-dialog select-adapter-dialog" (click)="$event.stopPropagation()">
+        <div class="da-modal-header">
+          <div class="da-modal-header-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F5B9E" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+            </svg>
+          </div>
+          <div class="da-modal-header-title">
+            <h3>{{ t('modal.selectAdapterTitle') }}</h3>
+            <span class="modal-dialog-subtitle">Al asignar un adaptador, se vinculará automáticamente en la propiedad del JRXML.</span>
+          </div>
+          <button type="button" class="da-modal-close-btn" (click)="closeSelectAdapterModal()">×</button>
+        </div>
+
+        <div class="da-modal-body">
+          @if (loadingAdapters()) {
+            <div class="loading-state-box">
+              <span class="spinner-inline"></span>
+              <span>Cargando adaptadores disponibles...</span>
+            </div>
+          } @else {
+            <div class="adapter-options-list">
+              @for (adapter of availableAdapters(); track adapter.relativePath) {
+                <div class="adapter-option-row">
+                  <div class="aor-info">
+                    <strong>{{ adapter.name }}</strong>
+                    <span class="aor-path">{{ adapter.relativePath }}</span>
+                    <span class="aor-loc">Datos: <code>{{ adapter.location || '(Sin archivo asignado)' }}</code></span>
+                  </div>
+                  <button type="button" class="btn btn-mini btn-primary" (click)="selectExistingAdapter(adapter)">
+                    Asignar a esta Carta
+                  </button>
+                </div>
+              }
+              @if (availableAdapters().length === 0) {
+                <p class="empty-list-note">No se encontraron otros adaptadores en el repositorio.</p>
+              }
+            </div>
+
+            <div class="adapter-modal-actions-bottom">
+              <button type="button" class="btn btn-outline" (click)="createNewAdapterForCurrentLetter(); closeSelectAdapterModal()">
+                + Generar nuevo xmlDataAdapter.xml para {{ selectedLetterId() }}
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="da-modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeSelectAdapterModal()">
+            {{ t('modal.cancel') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 5: SELECCIONAR O CREAR DATOS XML                                -->
+  <!-- ===================================================================== -->
+  @if (selectXmlDataModalOpen()) {
+    <div class="da-modal-overlay" (click)="closeSelectXmlDataModal()">
+      <div class="da-modal-dialog select-xml-dialog" (click)="$event.stopPropagation()">
+        <div class="da-modal-header">
+          <div class="da-modal-header-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F5B9E" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+          </div>
+          <div class="da-modal-header-title">
+            <h3>{{ t('modal.selectXmlTitle') }}</h3>
+            <span class="modal-dialog-subtitle">Al seleccionar o crear un archivo XML, se configurará automáticamente en el Data Adapter.</span>
+          </div>
+          <button type="button" class="da-modal-close-btn" (click)="closeSelectXmlDataModal()">×</button>
+        </div>
+
+        <div class="da-modal-body">
+          <div class="modal-subtabs">
+            <button
+              type="button"
+              class="modal-subtab-btn"
+              [class.active]="!isCreatingNewXml()"
+              (click)="isCreatingNewXml.set(false)"
+            >
+              {{ t('modal.existingXmlTab') }}
+            </button>
+            <button
+              type="button"
+              class="modal-subtab-btn"
+              [class.active]="isCreatingNewXml()"
+              (click)="isCreatingNewXml.set(true)"
+            >
+              {{ t('modal.newXmlTab') }}
+            </button>
+          </div>
+
+          @if (!isCreatingNewXml()) {
+            @if (loadingXmlFiles()) {
+              <div class="loading-state-box">
+                <span class="spinner-inline"></span>
+                <span>Buscando archivos XML en resources/data/xml/...</span>
+              </div>
+            } @else {
+              <div class="xml-options-list">
+                @for (file of availableXmlFiles(); track file.relativePath) {
+                  <div class="xml-option-row">
+                    <div class="xor-info">
+                      <strong>{{ file.fileName }}</strong>
+                      <span class="xor-path">{{ file.relativePath }}</span>
+                      @if (file.sizeBytes) {
+                        <span class="xor-size">({{ file.sizeBytes }} bytes)</span>
+                      }
+                    </div>
+                    <button type="button" class="btn btn-mini btn-primary" (click)="selectExistingXmlData(file)">
+                      Vincular al Data Adapter
+                    </button>
+                  </div>
+                }
+                @if (availableXmlFiles().length === 0) {
+                  <p class="empty-list-note">No se encontraron archivos XML en resources/data/xml/.</p>
+                }
+              </div>
+            }
+          } @else {
+            <div class="create-xml-form">
+              <div class="form-field-group">
+                <label class="form-label" for="new-xml-filename">Nombre del archivo XML:</label>
+                <input
+                  id="new-xml-filename"
+                  type="text"
+                  class="form-input code-font"
+                  [ngModel]="newXmlFileName()"
+                  (ngModelChange)="newXmlFileName.set($event)"
+                  placeholder="Ej: ETIPLET004.xml"
+                />
+                <span class="form-hint">Se creará en <code>resources/data/xml/&#123;nombre&#125;</code> con estructura básica para JasperReports.</span>
+              </div>
+              <button
+                type="button"
+                class="btn btn-primary"
+                [disabled]="loadingXmlFiles() || !newXmlFileName().trim()"
+                (click)="submitCreateXmlData()"
+              >
+                @if (loadingXmlFiles()) {
+                  <span class="spinner-inline"></span>
+                  <span>Creando archivo...</span>
+                } @else {
+                  <span>Crear y Vincular al Data Adapter</span>
+                }
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="da-modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeSelectXmlDataModal()">
+            {{ t('modal.cancel') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

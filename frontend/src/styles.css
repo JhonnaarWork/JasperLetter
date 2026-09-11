@@ -1,0 +1,178 @@
+/* Fuentes Corporativas Soho Gothic Pro (Indra / Minsait) */
+@font-face {
+  font-family: 'Soho';
+  src: url('/assets/fonts/soho/SohoGothicPro-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Soho';
+  src: url('/assets/fonts/soho/SohoGothicPro-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Soho';
+  src: url('/assets/fonts/soho/SohoGothicPro-Italic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Soho';
+  src: url('/assets/fonts/soho/SohoGothicPro-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Tokens de Diseño Oficiales de InCMS / Onesait Customers */
+:root {
+  --onesait-primary: #2E6C99;
+  --onesait-primary-hover: #1f4f72;
+  --onesait-primary-light: #5889ad;
+  --onesait-primary-tint: #D5E1EA;
+  --onesait-primary-soft: #edf4f9;
+
+  --onesait-body-bg: #F9F9FB;
+  --onesait-surface: #FFFFFF;
+  --onesait-border: #D5DCE0;
+  --onesait-border-subtle: #E5E9EC;
+  --onesait-header-bg: #FFFFFF;
+  --onesait-panel-header: #F3F0F0;
+
+  --onesait-text-primary: #2c3e50;
+  --onesait-text-secondary: #56739c;
+  --onesait-text-muted: #7f8c8d;
+
+  --onesait-success: #28a745;
+  --onesait-success-bg: #e8f5e9;
+  --onesait-warning: #ffa617;
+  --onesait-warning-bg: #fffbf6;
+  --onesait-error: #de2f2f;
+  --onesait-error-bg: #fdf2f2;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: 'Soho', -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  background-color: var(--onesait-body-bg);
+  color: var(--onesait-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Barra de desplazamiento inspirada en InCMS ($scrollbarColor: #989fa2) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #989fa2;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2E6C99;
+}
+
+/* ==========================================================================
+   Ajustes Visuales para ngx-jrxml-editor
+   Ocultar botones redundantes 'Design' y 'Source' del toolbar interno
+   ya que la aplicación dispone de pestañas dedicadas de primer nivel
+   ========================================================================== */
+lib-jasper-toolbar .vmode,
+lib-jasper-toolbar .zoom + .sep {
+  display: none !important;
+}
+
+/* ==========================================================================
+   Traducciones para el Editor Visual cuando lang="es"
+   ========================================================================== */
+[data-lang="es"] lib-jasper-palette header {
+  font-size: 0 !important;
+}
+[data-lang="es"] lib-jasper-palette header::after {
+  content: "Paleta";
+  font-size: 12px;
+  font-weight: 600;
+}
+
+[data-lang="es"] lib-jasper-palette .pal-label {
+  font-size: 0 !important;
+}
+[data-lang="es"] lib-jasper-palette li:nth-child(1) .pal-label::after { content: "Texto Estático"; font-size: 12px; }
+[data-lang="es"] lib-jasper-palette li:nth-child(2) .pal-label::after { content: "Campo de Texto"; font-size: 12px; }
+[data-lang="es"] lib-jasper-palette li:nth-child(3) .pal-label::after { content: "Imagen"; font-size: 12px; }
+[data-lang="es"] lib-jasper-palette li:nth-child(4) .pal-label::after { content: "Línea"; font-size: 12px; }
+[data-lang="es"] lib-jasper-palette li:nth-child(5) .pal-label::after { content: "Rectángulo"; font-size: 12px; }
+[data-lang="es"] lib-jasper-palette li:nth-child(6) .pal-label::after { content: "Elipse"; font-size: 12px; }
+[data-lang="es"] lib-jasper-palette li:nth-child(7) .pal-label::after { content: "Marco"; font-size: 12px; }
+[data-lang="es"] lib-jasper-palette li:nth-child(8) .pal-label::after { content: "Salto de Página"; font-size: 12px; }
+[data-lang="es"] lib-jasper-palette li:nth-child(9) .pal-label::after { content: "Subreporte"; font-size: 12px; }
+[data-lang="es"] lib-jasper-palette li:nth-child(10) .pal-label::after { content: "Tabla"; font-size: 12px; }
+[data-lang="es"] lib-jasper-palette li:nth-child(11) .pal-label::after { content: "Código de Barras"; font-size: 12px; }
+[data-lang="es"] lib-jasper-palette li:nth-child(12) .pal-label::after { content: "Gráfico Circular"; font-size: 12px; }
+[data-lang="es"] lib-jasper-palette li:nth-child(13) .pal-label::after { content: "Gráfico de Barras"; font-size: 12px; }
+[data-lang="es"] lib-jasper-palette li:nth-child(14) .pal-label::after { content: "Gráfico de Líneas"; font-size: 12px; }
+[data-lang="es"] lib-jasper-palette li:nth-child(15) .pal-label::after { content: "Tabla Cruzada"; font-size: 12px; }
+
+/* Tabs del Inspector/Propiedades */
+[data-lang="es"] .je-tabs button:nth-child(1) { font-size: 0 !important; }
+[data-lang="es"] .je-tabs button:nth-child(1)::after { content: "Propiedades"; font-size: 12px; }
+
+[data-lang="es"] .je-tabs button:nth-child(2) { font-size: 0 !important; }
+[data-lang="es"] .je-tabs button:nth-child(2)::after { content: "Datos"; font-size: 12px; }
+
+[data-lang="es"] .je-tabs button:nth-child(3) { font-size: 0 !important; }
+[data-lang="es"] .je-tabs button:nth-child(3)::after { content: "Página"; font-size: 12px; }
+
+[data-lang="es"] .je-tabs button:nth-child(4) { font-size: 0 !important; }
+[data-lang="es"] .je-tabs button:nth-child(4)::after { content: "Estilos"; font-size: 12px; }
+
+[data-lang="es"] .je-tabs button:nth-child(5) { font-size: 0 !important; }
+[data-lang="es"] .je-tabs button:nth-child(5)::after { content: "Verificar"; font-size: 12px; }
+
+/* Mensaje vacío de selección */
+[data-lang="es"] .ji-empty {
+  font-size: 0 !important;
+}
+[data-lang="es"] .ji-empty::after {
+  content: "Selecciona un elemento para editar sus propiedades.";
+  font-family: 'Soho', Arial, sans-serif;
+  font-size: 13px;
+  color: #758696;
+}
+
+/* ==========================================================================
+   Corrector Ortográfico: Subrayado Rojo Ondulado en Modal
+   (Sin fondo rojo ni amarillo, únicamente el subrayado ondulado limpio)
+   ========================================================================== */
+.textarea-backdrop mark.spell-error-mark {
+  color: transparent !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  text-decoration: underline wavy #DC2626 2px !important;
+  text-underline-offset: 3px !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+

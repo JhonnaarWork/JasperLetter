@@ -1,0 +1,284 @@
+<div
+  class="xml-code-editor"
+  [class.theme-dark]="activeTheme() === 'dark'"
+  [class.theme-light]="activeTheme() === 'light'"
+>
+  <!-- Barra de Herramientas del Editor -->
+  @if (showToolbar) {
+    <div class="editor-toolbar">
+      <div class="toolbar-left">
+        <span class="lang-pill">XML</span>
+        @if (filename) {
+          <span class="file-name" [title]="filename">{{ filename }}</span>
+        }
+        @if (formatBadge) {
+          <span class="format-pill-tag">{{ formatBadge }}</span>
+        }
+        @if (subtitle) {
+          <span class="toolbar-subtitle">{{ subtitle }}</span>
+        }
+      </div>
+
+      <div class="toolbar-right">
+        <!-- Acciones adicionales inyectadas desde el padre -->
+        @if (extraActionsTemplate) {
+          <ng-container *ngTemplateOutlet="extraActionsTemplate"></ng-container>
+        }
+
+        <!-- Aviso de XML formateado -->
+        @if (formattedNotice()) {
+          <span class="toast-mini-pill">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            {{ t('editor.formatted') }}
+          </span>
+        }
+
+        <!-- Botón Formatear XML -->
+        <button
+          type="button"
+          class="tb-btn"
+          (click)="formatCode()"
+          [disabled]="readonly"
+          [title]="t('editor.formatTooltip')"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+          <span>{{ t('editor.format') }}</span>
+        </button>
+
+        <!-- Botón Ajuste de Línea (Word Wrap) -->
+        <button
+          type="button"
+          class="tb-btn"
+          [class.active]="wordWrap()"
+          (click)="toggleWordWrap()"
+          [title]="t('editor.wrapTooltip')"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="15" y2="12"></line>
+            <polyline points="18 9 21 12 18 15"></polyline>
+            <path d="M21 12H17a2 2 0 0 0-2 2v2"></path>
+            <line x1="3" y1="18" x2="11" y2="18"></line>
+          </svg>
+          <span>{{ t('editor.wrap') }}</span>
+        </button>
+
+        <!-- Botón Buscar en Código -->
+        <button
+          type="button"
+          class="tb-btn"
+          [class.active]="searchOpen()"
+          (click)="openSearch()"
+          [title]="t('editor.searchTooltip')"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span>{{ t('editor.search') }}</span>
+        </button>
+
+        <!-- Botón Copiar Código -->
+        <button
+          type="button"
+          class="tb-btn"
+          (click)="copyCode()"
+          [title]="t('editor.copyTooltip')"
+        >
+          @if (copied()) {
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span style="color: #059669; font-weight: 700;">{{ t('editor.copied') }}</span>
+          } @else {
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>{{ t('editor.copy') }}</span>
+          }
+        </button>
+
+        <!-- Conmutador Tema Claro / Oscuro -->
+        <button
+          type="button"
+          class="tb-btn tb-theme-btn"
+          (click)="toggleTheme()"
+          [title]="activeTheme() === 'dark' ? t('editor.themeLight') : t('editor.themeDark')"
+        >
+          @if (activeTheme() === 'dark') {
+            <!-- Sol -->
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          } @else {
+            <!-- Luna -->
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Barra de Búsqueda Desplegable -->
+  @if (searchOpen()) {
+    <div class="editor-search-bar">
+      <div class="search-input-box">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          #searchInputRef
+          type="text"
+          class="search-input"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="onSearchChange($event)"
+          (keydown.enter)="findNext()"
+          [placeholder]="t('editor.searchPlaceholder')"
+        />
+      </div>
+
+      <div class="search-stats">
+        @if (searchQuery().trim()) {
+          @if (searchMatches().length > 0) {
+            <span class="match-count">
+              {{ t('editor.matches', currentMatchIndex() + 1, searchMatches().length) }}
+            </span>
+          } @else {
+            <span class="no-matches">{{ t('editor.noMatches') }}</span>
+          }
+        }
+      </div>
+
+      <div class="search-nav-btns">
+        <button
+          type="button"
+          class="search-btn"
+          (click)="findPrev()"
+          [disabled]="searchMatches().length === 0"
+          title="Anterior (Shift+Enter)"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="search-btn"
+          (click)="findNext()"
+          [disabled]="searchMatches().length === 0"
+          title="Siguiente (Enter)"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="search-btn search-close"
+          (click)="closeSearch()"
+          title="Cerrar (Esc)"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Cuerpo Principal del Editor -->
+  <div class="editor-workspace">
+    <!-- Panel de Líneas (Gutter) -->
+    @if (showGutter) {
+      <div class="editor-gutter" #gutterRef>
+        <div class="gutter-lines">
+          @for (num of lineNumbers(); track num) {
+            <div
+              class="gutter-line"
+              [class.active-line]="num === cursorLine()"
+            >
+              {{ num }}
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Lienzo de Edición (Capa Resaltada + Textarea) -->
+    <div class="editor-canvas">
+      <!-- Resaltado de línea activa en el lienzo -->
+      <div
+        class="canvas-active-line"
+        [style.top.px]="(cursorLine() - 1) * 20 + 12"
+      ></div>
+
+      <!-- Capa de Resaltado Prism.js (Fondo) -->
+      <pre
+        #preRef
+        class="highlight-layer"
+        [class.wrap]="wordWrap()"
+        aria-hidden="true"
+      ><code [innerHTML]="highlightedHtml()"></code></pre>
+
+      <!-- Textarea de Entrada Transparente (Primer Plano) -->
+      <textarea
+        #textareaRef
+        class="code-input"
+        [class.wrap]="wordWrap()"
+        [value]="currentCode()"
+        (input)="onInput($event)"
+        (scroll)="onScroll($event)"
+        (keydown)="onKeyDown($event)"
+        (click)="updateCursorPos()"
+        (keyup)="updateCursorPos()"
+        (select)="updateCursorPos()"
+        [readonly]="readonly"
+        [placeholder]="placeholder"
+        spellcheck="false"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+      ></textarea>
+    </div>
+  </div>
+
+  <!-- Barra de Estado Inferior -->
+  @if (showStatusbar) {
+    <div class="editor-statusbar">
+      <div class="sb-left">
+        <span class="sb-item">
+          {{ t('editor.lineCol', cursorLine(), cursorCol()) }}
+        </span>
+        <span class="sb-sep">•</span>
+        <span class="sb-item">
+          {{ t('editor.linesCount', lineCount()) }}
+        </span>
+        <span class="sb-sep">•</span>
+        <span class="sb-item">
+          {{ t('editor.charsCount', currentCode().length) }} ({{ fileSizeText() }})
+        </span>
+      </div>
+
+      <div class="sb-right">
+        <span class="sb-badge">Espacios: 2</span>
+        <span class="sb-badge">UTF-8</span>
+        <span class="sb-badge">XML 1.0</span>
+      </div>
+    </div>
+  }
+</div>

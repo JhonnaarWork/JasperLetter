@@ -1,0 +1,598 @@
+/* ==========================================================================
+   XmlCodeEditorComponent - Estilos de Editor de Código Profesional
+   ========================================================================== */
+
+:host,
+app-xml-code-editor {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.xml-code-editor {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  font-family: 'Consolas', 'Fira Code', 'Cascadia Code', 'Menlo', Monaco, 'Courier New', monospace;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ==========================================================================
+   Temas: Claro (InCMS) vs Oscuro (IDE)
+   ========================================================================== */
+
+/* Tema Claro */
+.xml-code-editor.theme-light {
+  background-color: #FFFFFF;
+  color: #1E293B;
+  --ed-bg: #FFFFFF;
+  --ed-gutter-bg: #F8FAFC;
+  --ed-gutter-border: #E2E8F0;
+  --ed-gutter-num: #94A3B8;
+  --ed-gutter-num-active: #2E6C99;
+  --ed-active-line-bg: rgba(46, 108, 153, 0.05);
+  --ed-tb-bg: #F8FAFC;
+  --ed-tb-border: #E2E8F0;
+  --ed-sb-bg: #F1F5F9;
+  --ed-sb-border: #CBD5E1;
+  --ed-sb-text: #64748B;
+  --ed-caret: #1E293B;
+  --ed-selection: rgba(46, 108, 153, 0.22);
+  --ed-btn-bg: #FFFFFF;
+  --ed-btn-border: #CBD5E1;
+  --ed-btn-color: #475569;
+  --ed-btn-hover-bg: #F0F4F8;
+  --ed-btn-hover-border: #2E6C99;
+  --ed-btn-hover-color: #2E6C99;
+}
+
+/* Tema Oscuro */
+.xml-code-editor.theme-dark {
+  background-color: #1E1E1E;
+  color: #D4D4D4;
+  --ed-bg: #1E1E1E;
+  --ed-gutter-bg: #252526;
+  --ed-gutter-border: #333333;
+  --ed-gutter-num: #6E7681;
+  --ed-gutter-num-active: #38BDF8;
+  --ed-active-line-bg: rgba(255, 255, 255, 0.04);
+  --ed-tb-bg: #252526;
+  --ed-tb-border: #333333;
+  --ed-sb-bg: #181818;
+  --ed-sb-border: #2D2D2D;
+  --ed-sb-text: #9CA3AF;
+  --ed-caret: #38BDF8;
+  --ed-selection: rgba(56, 189, 248, 0.28);
+  --ed-btn-bg: #2D2D2D;
+  --ed-btn-border: #404040;
+  --ed-btn-color: #D1D5DB;
+  --ed-btn-hover-bg: #383838;
+  --ed-btn-hover-border: #38BDF8;
+  --ed-btn-hover-color: #38BDF8;
+}
+
+/* ==========================================================================
+   Barra de Herramientas (Toolbar)
+   ========================================================================== */
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background-color: var(--ed-tb-bg);
+  border-bottom: 1px solid var(--ed-tb-border);
+  min-height: 38px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+
+.lang-pill {
+  background: #2E6C99;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  user-select: none;
+}
+
+.format-pill-tag {
+  background: #0284C7;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.file-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 260px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.theme-dark .file-name {
+  color: #E2E8F0;
+}
+
+.toolbar-subtitle {
+  font-size: 11px;
+  color: #64748B;
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.theme-dark .toolbar-subtitle {
+  color: #94A3B8;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.toast-mini-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #ECFDF5;
+  border: 1px solid #6EE7B7;
+  color: #047857;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  animation: fadeIn 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--ed-btn-bg);
+  border: 1px solid var(--ed-btn-border);
+  color: var(--ed-btn-color);
+  padding: 4px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  user-select: none;
+}
+
+.tb-btn:hover:not(:disabled) {
+  background: var(--ed-btn-hover-bg);
+  border-color: var(--ed-btn-hover-border);
+  color: var(--ed-btn-hover-color);
+}
+
+.tb-btn.active {
+  background: #E0F2FE;
+  border-color: #0284C7;
+  color: #0284C7;
+}
+
+.theme-dark .tb-btn.active {
+  background: #0369A1;
+  border-color: #38BDF8;
+  color: #FFFFFF;
+}
+
+.tb-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tb-theme-btn {
+  padding: 4px 7px;
+}
+
+/* ==========================================================================
+   Barra de Búsqueda Desplegable
+   ========================================================================== */
+
+.editor-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background-color: var(--ed-tb-bg);
+  border-bottom: 1px solid var(--ed-tb-border);
+  flex-shrink: 0;
+  box-sizing: border-box;
+  animation: slideDown 0.18s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.search-input-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ed-bg);
+  border: 1px solid var(--ed-btn-border);
+  padding: 3px 8px;
+  border-radius: 4px;
+  flex: 1;
+  max-width: 320px;
+  color: var(--ed-btn-color);
+}
+
+.search-input-box:focus-within {
+  border-color: #2E6C99;
+  box-shadow: 0 0 0 2px rgba(46, 108, 153, 0.15);
+}
+
+.search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 12px;
+  font-family: inherit;
+  color: inherit;
+  width: 100%;
+}
+
+.search-stats {
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #64748B;
+  min-width: 80px;
+}
+
+.match-count {
+  font-weight: 600;
+  color: #2E6C99;
+}
+
+.theme-dark .match-count {
+  color: #38BDF8;
+}
+
+.no-matches {
+  color: #EF4444;
+}
+
+.search-nav-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.search-btn {
+  background: var(--ed-btn-bg);
+  border: 1px solid var(--ed-btn-border);
+  color: var(--ed-btn-color);
+  padding: 3px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.search-btn:hover:not(:disabled) {
+  border-color: #2E6C99;
+  color: #2E6C99;
+}
+
+.search-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.search-close {
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* ==========================================================================
+   Espacio de Trabajo (Workspace: Gutter + Canvas)
+   ========================================================================== */
+
+.editor-workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--ed-bg);
+}
+
+/* Panel de Líneas (Gutter) */
+.editor-gutter {
+  width: 52px;
+  min-width: 52px;
+  max-width: 52px;
+  background-color: var(--ed-gutter-bg);
+  border-right: 1px solid var(--ed-gutter-border);
+  box-sizing: border-box;
+  padding-top: 12px;
+  overflow: hidden;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.gutter-lines {
+  display: flex;
+  flex-direction: column;
+}
+
+.gutter-line {
+  height: 20px;
+  line-height: 20px;
+  font-size: 11px;
+  text-align: right;
+  padding-right: 12px;
+  color: var(--ed-gutter-num);
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.gutter-line.active-line {
+  color: var(--ed-gutter-num-active);
+  font-weight: 700;
+}
+
+/* Lienzo de Edición (Canvas) */
+.editor-canvas {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.canvas-active-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background-color: var(--ed-active-line-bg);
+  pointer-events: none;
+  z-index: 0;
+  transition: top 0.04s ease-out;
+}
+
+/* Capa de Resaltado Prism (Fondo) y Textarea (Primer Plano) */
+.highlight-layer,
+.code-input {
+  box-sizing: border-box;
+  font-family: 'Consolas', 'Fira Code', 'Cascadia Code', 'Menlo', Monaco, 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 20px;
+  tab-size: 2;
+  -moz-tab-size: 2;
+  padding: 12px 16px;
+  margin: 0;
+  border: none;
+  letter-spacing: normal;
+  font-feature-settings: "liga" 0;
+  font-variant-ligatures: none;
+  text-rendering: optimizeLegibility;
+}
+
+/* Sin ajuste de línea (comportamiento IDE clásico con scroll horizontal) */
+.highlight-layer:not(.wrap),
+.code-input:not(.wrap) {
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+/* Con ajuste de línea activado */
+.highlight-layer.wrap,
+.code-input.wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.highlight-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+  background: transparent;
+}
+
+.code-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--ed-caret);
+  resize: none;
+  outline: none;
+  z-index: 2;
+}
+
+.code-input::selection {
+  background-color: var(--ed-selection);
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ==========================================================================
+   Colores de Sintaxis Prism.js para XML
+   ========================================================================== */
+
+/* Tema Claro */
+.theme-light .token.comment,
+.theme-light .token.prolog {
+  color: #6E7781;
+  font-style: italic;
+}
+
+.theme-light .token.doctype,
+.theme-light .token.cdata {
+  color: #0D9488;
+  font-weight: 500;
+}
+
+.theme-light .token.punctuation {
+  color: #64748B;
+}
+
+.theme-light .token.tag {
+  color: #0969DA;
+  font-weight: 600;
+}
+
+.theme-light .token.tag .token.punctuation {
+  color: #0550AE;
+  font-weight: normal;
+}
+
+.theme-light .token.attr-name {
+  color: #953800;
+  font-weight: 500;
+}
+
+.theme-light .token.attr-value,
+.theme-light .token.string {
+  color: #059669;
+}
+
+.theme-light .token.entity {
+  color: #B45309;
+}
+
+/* Tema Oscuro */
+.theme-dark .token.comment,
+.theme-dark .token.prolog {
+  color: #6A9955;
+  font-style: italic;
+}
+
+.theme-dark .token.doctype,
+.theme-dark .token.cdata {
+  color: #4EC9B0;
+  font-weight: 500;
+}
+
+.theme-dark .token.punctuation {
+  color: #808080;
+}
+
+.theme-dark .token.tag {
+  color: #569CD6;
+  font-weight: 600;
+}
+
+.theme-dark .token.tag .token.punctuation {
+  color: #808080;
+  font-weight: normal;
+}
+
+.theme-dark .token.attr-name {
+  color: #9CDCFE;
+  font-weight: 500;
+}
+
+.theme-dark .token.attr-value,
+.theme-dark .token.string {
+  color: #CE9178;
+}
+
+.theme-dark .token.entity {
+  color: #DCDCAA;
+}
+
+/* ==========================================================================
+   Barra de Estado Inferior (Status Bar)
+   ========================================================================== */
+
+.editor-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 14px;
+  background-color: var(--ed-sb-bg);
+  border-top: 1px solid var(--ed-sb-border);
+  color: var(--ed-sb-text);
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 24px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.sb-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sb-sep {
+  opacity: 0.4;
+  font-size: 8px;
+}
+
+.sb-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sb-badge {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.theme-dark .sb-badge {
+  background: rgba(255, 255, 255, 0.1);
+}
