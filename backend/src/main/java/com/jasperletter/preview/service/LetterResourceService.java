@@ -342,6 +342,26 @@ public class LetterResourceService {
     }
 
     /**
+     * Comprueba que un archivo candidato quede realmente contenido dentro de resources/,
+     * resolviendo enlaces simbólicos y secuencias ".." antes de comparar. Se usa para evitar
+     * que una ruta declarada por el cliente (absoluta o con "..") pueda escapar del directorio
+     * de recursos y exponer lectura arbitraria de archivos del servidor.
+     */
+    private boolean isWithinResourcesDir(File candidate) {
+        File resourcesDir = getResourcesDir();
+        if (resourcesDir == null || candidate == null) {
+            return false;
+        }
+        try {
+            Path resourcesReal = resourcesDir.toPath().toRealPath();
+            Path candidateReal = candidate.toPath().toRealPath();
+            return candidateReal.startsWith(resourcesReal);
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    /**
      * Resuelve el archivo físico de datos XML basándose estrictamente en la ruta declarada en el Data Adapter.
      * No realiza suposiciones arbitrarias ni extracción por substring:
      * - Si la ruta es absoluta, solo se busca en esa ruta absoluta.
@@ -349,6 +369,10 @@ public class LetterResourceService {
      *   1. Raíz del workspace (padre de resources/)
      *   2. Directorio resources/
      *   3. Directorio de la carta (resources/reports/{letterId}/)
+     * En todos los casos, el archivo resuelto debe quedar contenido dentro de resources/:
+     * <location> proviene de contenido enviado por el cliente y no es de confianza, por lo que
+     * cualquier candidato que caiga fuera de ese límite (vía ruta absoluta ajena o secuencias "..")
+     * se descarta en vez de leerse.
      */
     public File resolveDataFile(String letterId, String location, List<String> testedPathsOut) {
         if (location == null || location.trim().isEmpty()) {
@@ -365,7 +389,7 @@ public class LetterResourceService {
             if (!tested.contains(canonPath)) {
                 tested.add(canonPath);
             }
-            if (fAbs.exists() && fAbs.isFile()) {
+            if (fAbs.exists() && fAbs.isFile() && isWithinResourcesDir(fAbs)) {
                 return fAbs;
             }
             return null;
@@ -386,7 +410,7 @@ public class LetterResourceService {
             if (!tested.contains(canonWs)) {
                 tested.add(canonWs);
             }
-            if (fWs.exists() && fWs.isFile()) {
+            if (fWs.exists() && fWs.isFile() && isWithinResourcesDir(fWs)) {
                 return fWs;
             }
         }
@@ -398,7 +422,7 @@ public class LetterResourceService {
             if (!tested.contains(canonRes)) {
                 tested.add(canonRes);
             }
-            if (fRes.exists() && fRes.isFile()) {
+            if (fRes.exists() && fRes.isFile() && isWithinResourcesDir(fRes)) {
                 return fRes;
             }
         }
@@ -410,7 +434,7 @@ public class LetterResourceService {
             if (!tested.contains(canonLetter)) {
                 tested.add(canonLetter);
             }
-            if (fLetter.exists() && fLetter.isFile()) {
+            if (fLetter.exists() && fLetter.isFile() && isWithinResourcesDir(fLetter)) {
                 return fLetter;
             }
         }
