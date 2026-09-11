@@ -281,8 +281,11 @@ public final class JrxmlFormatUtils {
         if (cdMatcher.find()) {
             text = cdMatcher.group(1);
         }
-        // Quitar saltos de línea y espacios de formateo XML accidentales al inicio y al final
-        text = text.replaceAll("^[\\r\\n]+[\\t ]*", "").replaceAll("[\\t ]*[\\r\\n]+$", "");
+        // Quitar saltos de línea y espacios de formateo XML accidentales al inicio y al final.
+        // El final admite ambos órdenes ("\t\n" y "\n\t"): el habitual antes de un tag de cierre
+        // indentado es este último (salto de línea seguido de la sangría del cierre).
+        text = text.replaceAll("^[\\r\\n]+[\\t ]*", "")
+                   .replaceAll("(?:[\\t ]*[\\r\\n]+|[\\r\\n]+[\\t ]*)$", "");
         return text;
     }
 

@@ -45,7 +45,8 @@ public class LetterResourceService {
      */
     private static final Pattern LETTER_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_-]+$");
 
-    private boolean isValidLetterId(String letterId) {
+    // Visibilidad de paquete (no private) para permitir tests unitarios directos sin reflexión.
+    boolean isValidLetterId(String letterId) {
         return letterId != null && LETTER_ID_PATTERN.matcher(letterId.trim()).matches();
     }
 
@@ -54,7 +55,7 @@ public class LetterResourceService {
      * operaciones que actúan sobre una carta puntual identificada por el cliente
      * (lectura y guardado), donde un id inválido debe tratarse como error, no ignorarse.
      */
-    private String requireValidLetterId(String letterId) {
+    String requireValidLetterId(String letterId) {
         if (!isValidLetterId(letterId)) {
             throw new IllegalArgumentException("Identificador de carta inválido: " + letterId);
         }
@@ -373,7 +374,7 @@ public class LetterResourceService {
      * que una ruta declarada por el cliente (absoluta o con "..") pueda escapar del directorio
      * de recursos y exponer lectura arbitraria de archivos del servidor.
      */
-    private boolean isWithinResourcesDir(File candidate) {
+    boolean isWithinResourcesDir(File candidate) {
         File resourcesDir = getResourcesDir();
         if (resourcesDir == null || candidate == null) {
             return false;
