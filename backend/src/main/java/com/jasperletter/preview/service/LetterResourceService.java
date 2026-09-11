@@ -98,14 +98,6 @@ public class LetterResourceService {
             }
         }
 
-        // 4. Fallback a ruta absoluta del workspace
-        if (chosen == null) {
-            File f3 = new File("c:/Users/jnnateraa/Documents/000Proyectos/JasperLetter/resources");
-            if (f3.exists() && f3.isDirectory()) {
-                chosen = f3;
-            }
-        }
-
         if (chosen != null) {
             try {
                 resolvedResourcesDir = chosen.getCanonicalFile();
@@ -113,6 +105,9 @@ public class LetterResourceService {
                 resolvedResourcesDir = chosen.getAbsoluteFile();
             }
         } else {
+            log.warn("No se pudo localizar el directorio resources/ (probado: app.resources.dir={}, ../resources, ./resources). "
+                            + "Usando ../resources como último recurso; configure app.resources.dir si esto no es correcto.",
+                    configuredResourcesDir);
             resolvedResourcesDir = new File("../resources");
         }
 
