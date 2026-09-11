@@ -1,5 +1,7 @@
 # Exclude resources as requested by user (only backend and frontend versioned)
-resources/
+# Anchored to repo root: an unanchored "resources/" also matched backend/src/main/resources/,
+# which silently excluded application.properties from version control.
+/resources/
 *.pdf
 
 # Maven / Java (Backend)

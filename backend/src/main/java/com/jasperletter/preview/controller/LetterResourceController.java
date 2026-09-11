@@ -24,7 +24,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/resources")
-@CrossOrigin(origins = "*")
 public class LetterResourceController {
 
     private static final Logger log = LoggerFactory.getLogger(LetterResourceController.class);

@@ -15,7 +15,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/reports")
-@CrossOrigin(origins = "*") // Permite peticiones desde el frontend Angular (localhost:4200)
 public class ReportPreviewController {
 
     private static final Logger log = LoggerFactory.getLogger(ReportPreviewController.class);
