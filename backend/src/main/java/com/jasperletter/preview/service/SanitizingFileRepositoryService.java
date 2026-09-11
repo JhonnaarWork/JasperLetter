@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 
 public class SanitizingFileRepositoryService extends FileRepositoryService {
 
@@ -26,10 +27,14 @@ public class SanitizingFileRepositoryService extends FileRepositoryService {
     public InputStream getInputStream(RepositoryContext context, String location) {
         InputStream is = super.getInputStream(context, location);
 
-        // Si falló la resolución normal de super (por ejemplo por contener .. en la ruta), intentar resolver directamente contra rootDir
+        // Si falló la resolución normal de super (por ejemplo por contener .. en la ruta), intentar resolver
+        // directamente contra rootDir. Como "location" puede provenir de una plantilla JRXML enviada por el
+        // cliente (imageExpression, subreport, template), se exige que el archivo resuelto quede realmente
+        // contenido dentro de rootDir: de lo contrario, super() lo había rechazado por buenas razones y este
+        // fallback no debe reintroducir esa vía de escape.
         if (is == null && location != null && !location.trim().isEmpty()) {
             File directFile = new File(rootDir, location);
-            if (directFile.exists()) {
+            if (directFile.exists() && isWithinRoot(directFile)) {
                 try {
                     is = directFile.toURI().toURL().openStream();
                 } catch (IOException e) {
@@ -59,5 +64,21 @@ public class SanitizingFileRepositoryService extends FileRepositoryService {
         }
 
         return is;
+    }
+
+    /**
+     * Comprueba que un archivo candidato quede realmente contenido dentro de rootDir,
+     * resolviendo enlaces simbólicos y secuencias ".." antes de comparar. Evita que una
+     * "location" con path traversal (ej: "../../../../etc/passwd") escape del repositorio
+     * de recursos a través de este fallback.
+     */
+    private boolean isWithinRoot(File candidate) {
+        try {
+            Path rootReal = rootDir.toPath().toRealPath();
+            Path candidateReal = candidate.toPath().toRealPath();
+            return candidateReal.startsWith(rootReal);
+        } catch (IOException e) {
+            return false;
+        }
     }
 }
