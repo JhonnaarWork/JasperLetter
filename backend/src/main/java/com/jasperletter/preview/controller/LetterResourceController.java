@@ -107,6 +107,11 @@ public class LetterResourceController {
                 response.put("xmlData", reloadedXmlData);
             }
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException ex) {
+            Map<String, Object> err = new HashMap<>();
+            err.put("status", "VALIDATION_ERROR");
+            err.put("message", ex.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
         } catch (Exception ex) {
             log.error("Error al guardar carta {}", letterId, ex);
             Map<String, Object> err = new HashMap<>();

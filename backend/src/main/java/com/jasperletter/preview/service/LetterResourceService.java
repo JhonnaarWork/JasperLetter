@@ -31,11 +31,35 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Service
 public class LetterResourceService {
 
     private static final Logger log = LoggerFactory.getLogger(LetterResourceService.class);
+
+    /**
+     * Un letterId válido es un único segmento de ruta: letras, dígitos, "_" y "-".
+     * Rechaza "..", separadores de directorio y cualquier otro carácter que permita
+     * escapar de resources/reports/{letterId} al construir rutas de archivo.
+     */
+    private static final Pattern LETTER_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_-]+$");
+
+    private boolean isValidLetterId(String letterId) {
+        return letterId != null && LETTER_ID_PATTERN.matcher(letterId.trim()).matches();
+    }
+
+    /**
+     * Valida letterId antes de usarlo para construir una ruta de archivo. Se usa en las
+     * operaciones que actúan sobre una carta puntual identificada por el cliente
+     * (lectura y guardado), donde un id inválido debe tratarse como error, no ignorarse.
+     */
+    private String requireValidLetterId(String letterId) {
+        if (!isValidLetterId(letterId)) {
+            throw new IllegalArgumentException("Identificador de carta inválido: " + letterId);
+        }
+        return letterId.trim();
+    }
 
     @Value("${app.resources.dir:../resources}")
     private String configuredResourcesDir = "../resources";
@@ -153,6 +177,7 @@ public class LetterResourceService {
      * Obtiene el contenido completo de una carta (JRXML, DataAdapter y XML de datos)
      */
     public LetterDetailResponse getLetterDetail(String letterId) throws IOException {
+        letterId = requireValidLetterId(letterId);
         File letterDir = new File(getResourcesDir(), "reports/" + letterId);
         if (!letterDir.exists() || !letterDir.isDirectory()) {
             throw new IllegalArgumentException("Carta no encontrada: " + letterId);
@@ -242,6 +267,7 @@ public class LetterResourceService {
                            String xmlData, boolean saveXmlData,
                            String dataAdapter, boolean saveDataAdapter,
                            String requestedFormat) throws IOException {
+        letterId = requireValidLetterId(letterId);
         File letterDir = new File(getResourcesDir(), "reports/" + letterId);
         if (!letterDir.exists()) {
             letterDir.mkdirs();
@@ -471,9 +497,10 @@ public class LetterResourceService {
      * o recurriendo al fallback estándar resources/data/xml/{letterId}.xml.
      */
     public File getDataFileForLetter(String letterId) {
-        if (letterId == null || letterId.trim().isEmpty()) {
+        if (!isValidLetterId(letterId)) {
             return null;
         }
+        letterId = letterId.trim();
         File resourcesDir = getResourcesDir();
         File letterDir = new File(resourcesDir, "reports/" + letterId);
         File adapterFile = new File(letterDir, "xmlDataAdapter.xml");
@@ -503,9 +530,10 @@ public class LetterResourceService {
      * Comprueba si el Data Adapter de la carta existe y su ruta declarada es válida y accesible en disco.
      */
     public boolean isDataAdapterConnected(String letterId) {
-        if (letterId == null || letterId.trim().isEmpty()) {
+        if (!isValidLetterId(letterId)) {
             return false;
         }
+        letterId = letterId.trim();
         File resourcesDir = getResourcesDir();
         File letterDir = new File(resourcesDir, "reports/" + letterId);
         File adapterFile = new File(letterDir, "xmlDataAdapter.xml");
