@@ -2,7 +2,7 @@ export interface LetterResourceInfo {
   id: string;
   name: string;
   folderPath: string;
-  jrxmlFile: string;
+  jrxmlFileName: string;
   format: 'JR6' | 'JR7';
   hasDataAdapter: boolean;
   dataAdapterFile?: string;

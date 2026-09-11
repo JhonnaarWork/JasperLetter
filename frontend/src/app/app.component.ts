@@ -32,6 +32,7 @@ import {
   TestDataAdapterResponse
 } from './models/data-adapter.model';
 import { XmlCodeEditorComponent } from './components/xml-code-editor/xml-code-editor.component';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -444,7 +445,7 @@ export class AppComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           if (err.status === 0) {
             this.backendOnline.set(false);
-            this.errorMessage.set(this.t('preview.errorConnection'));
+            this.errorMessage.set(this.t('preview.errorConnection', environment.apiBaseUrl || window.location.origin));
           } else {
             if (err.error instanceof Blob) {
               const reader = new FileReader();

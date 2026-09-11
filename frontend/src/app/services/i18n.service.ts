@@ -138,7 +138,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'preview.loadingOverlay': 'Compilando y renderizando reporte PDF con JasperReports...',
     'preview.emptyState': 'Presiona "Previsualizar" para compilar la carta en formato PDF.',
     'preview.errorHeader': 'Error al compilar la plantilla:',
-    'preview.errorConnection': 'No se pudo conectar con el backend de JasperReports en http://localhost:8080',
+    'preview.errorConnection': 'No se pudo conectar con el backend de JasperReports en {0}',
     'preview.errorTemplate': 'Error en la plantilla o expresión JRXML',
     'preview.errorGeneric': 'Error desconocido al compilar',
 
@@ -389,7 +389,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'preview.loadingOverlay': 'Compiling and rendering PDF report with JasperReports...',
     'preview.emptyState': 'Press "Preview" to compile letter into PDF format.',
     'preview.errorHeader': 'Error compiling template:',
-    'preview.errorConnection': 'Could not connect to JasperReports backend at http://localhost:8080',
+    'preview.errorConnection': 'Could not connect to JasperReports backend at {0}',
     'preview.errorTemplate': 'Error in JRXML template or expression',
     'preview.errorGeneric': 'Unknown compilation error',
 
