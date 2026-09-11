@@ -40,7 +40,7 @@ class LetterResourceServiceTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        service = new LetterResourceService();
+        service = new LetterResourceService(new DataFileResolver());
         resourcesDir = tempDir.resolve("resources");
         Files.createDirectories(resourcesDir.resolve("data/xml"));
         Files.createDirectories(resourcesDir.resolve("reports/ETIPLET_TEST"));

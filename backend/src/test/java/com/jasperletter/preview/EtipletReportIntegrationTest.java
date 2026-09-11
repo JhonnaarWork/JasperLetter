@@ -2,6 +2,7 @@ package com.jasperletter.preview;
 
 import com.jasperletter.preview.dto.LetterDetailResponse;
 import com.jasperletter.preview.dto.LetterResourceInfo;
+import com.jasperletter.preview.service.DataFileResolver;
 import com.jasperletter.preview.service.JasperReportService;
 import com.jasperletter.preview.service.LetterResourceService;
 import com.jasperletter.preview.util.JrxmlFormatUtils;
@@ -37,7 +38,7 @@ class EtipletReportIntegrationTest {
 
     @Test
     void compilesAndFillsEtiplet003FromResourcesInAllSupportedInputForms() throws Exception {
-        LetterResourceService resourceService = new LetterResourceService();
+        LetterResourceService resourceService = new LetterResourceService(new DataFileResolver());
         assertTrue(resourceService.getResourcesDir().exists());
 
         // 1. Listar cartas
@@ -97,7 +98,7 @@ class EtipletReportIntegrationTest {
 
     @Test
     void convertToJr7NormalizesPageHeaderAndFillProducesPrintableElements() throws Exception {
-        LetterResourceService resourceService = new LetterResourceService();
+        LetterResourceService resourceService = new LetterResourceService(new DataFileResolver());
         LetterDetailResponse detail = resourceService.getLetterDetail(LETTER_ID);
 
         String jr7 = JrxmlFormatUtils.convertToJr7(detail.getJrxml());

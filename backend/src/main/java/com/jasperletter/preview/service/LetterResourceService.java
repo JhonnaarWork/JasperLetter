@@ -18,8 +18,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
@@ -29,7 +27,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,6 +36,12 @@ import java.util.regex.Pattern;
 public class LetterResourceService {
 
     private static final Logger log = LoggerFactory.getLogger(LetterResourceService.class);
+
+    private final DataFileResolver dataFileResolver;
+
+    public LetterResourceService(DataFileResolver dataFileResolver) {
+        this.dataFileResolver = dataFileResolver;
+    }
 
     /**
      * Un letterId válido es un único segmento de ruta: letras, dígitos, "_" y "-".
@@ -337,164 +340,36 @@ public class LetterResourceService {
 
     /**
      * Devuelve la ruta canónica normalizada de un File, evitando puntos relativos (../).
+     * Delega en DataFileResolver (hallazgo A-5).
      */
     public String toCanonicalPath(File f) {
-        if (f == null) return null;
-        try {
-            return f.getCanonicalPath();
-        } catch (IOException e) {
-            return f.getAbsolutePath();
-        }
+        return dataFileResolver.toCanonicalPath(f);
     }
 
     /**
      * Determina si una ruta es explícitamente absoluta (ej: C:\... en Windows o /... en Unix).
+     * Delega en DataFileResolver (hallazgo A-5).
      */
     public boolean isExplicitlyAbsolute(String path) {
-        if (path == null || path.trim().isEmpty()) return false;
-        String trimmed = path.trim();
-        // Windows drive letter: ej. C:\ o C:/
-        if (trimmed.length() >= 2 && Character.isLetter(trimmed.charAt(0)) && trimmed.charAt(1) == ':') {
-            return true;
-        }
-        // UNC: \\server\share o //server/share
-        if (trimmed.startsWith("\\\\") || trimmed.startsWith("//")) {
-            return true;
-        }
-        // Linux/Unix absoluto (solo si no es Windows)
-        String os = System.getProperty("os.name", "").toLowerCase();
-        if (!os.contains("win") && trimmed.startsWith("/")) {
-            File f = new File(trimmed);
-            if (f.exists() && f.isFile()) {
-                return true;
-            }
-        }
-        return false;
+        return dataFileResolver.isExplicitlyAbsolute(path);
     }
 
     /**
-     * Comprueba que un archivo candidato quede realmente contenido dentro de resources/,
-     * resolviendo enlaces simbólicos y secuencias ".." antes de comparar. Se usa para evitar
-     * que una ruta declarada por el cliente (absoluta o con "..") pueda escapar del directorio
-     * de recursos y exponer lectura arbitraria de archivos del servidor.
-     */
-    boolean isWithinResourcesDir(File candidate) {
-        File resourcesDir = getResourcesDir();
-        if (resourcesDir == null || candidate == null) {
-            return false;
-        }
-        try {
-            Path resourcesReal = resourcesDir.toPath().toRealPath();
-            Path candidateReal = candidate.toPath().toRealPath();
-            return candidateReal.startsWith(resourcesReal);
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Resuelve el archivo físico de datos XML basándose estrictamente en la ruta declarada en el Data Adapter.
-     * No realiza suposiciones arbitrarias ni extracción por substring:
-     * - Si la ruta es absoluta, solo se busca en esa ruta absoluta.
-     * - Si la ruta es relativa, se busca respetando la ruta declarada relativa a:
-     *   1. Raíz del workspace (padre de resources/)
-     *   2. Directorio resources/
-     *   3. Directorio de la carta (resources/reports/{letterId}/)
-     * En todos los casos, el archivo resuelto debe quedar contenido dentro de resources/:
-     * <location> proviene de contenido enviado por el cliente y no es de confianza, por lo que
-     * cualquier candidato que caiga fuera de ese límite (vía ruta absoluta ajena o secuencias "..")
-     * se descarta en vez de leerse.
+     * Resuelve el archivo físico de datos XML basándose estrictamente en la ruta declarada en
+     * el Data Adapter, contenida siempre dentro de resources/. Delega en DataFileResolver
+     * (hallazgo A-5) — ver su documentación para el detalle de la estrategia de resolución y
+     * de la contención de seguridad.
      */
     public File resolveDataFile(String letterId, String location, List<String> testedPathsOut) {
-        if (location == null || location.trim().isEmpty()) {
-            return null;
-        }
-
-        String trimmed = location.trim();
-        List<String> tested = testedPathsOut != null ? testedPathsOut : new ArrayList<>();
-
-        // 1. Si es ruta absoluta explícita (ej: C:\... o \\server\...)
-        if (isExplicitlyAbsolute(trimmed)) {
-            File fAbs = new File(trimmed);
-            String canonPath = toCanonicalPath(fAbs);
-            if (!tested.contains(canonPath)) {
-                tested.add(canonPath);
-            }
-            if (fAbs.exists() && fAbs.isFile() && isWithinResourcesDir(fAbs)) {
-                return fAbs;
-            }
-            return null;
-        }
-
-        // 2. Ruta relativa: limpiar barras iniciales de rutas de repositorio (ej: "/data/xml/..." -> "data/xml/...")
-        String relPath = trimmed.replace('\\', '/').replaceAll("^/+", "");
-        File resourcesDir = getResourcesDir();
-        File workspaceRoot = resourcesDir != null ? resourcesDir.getParentFile() : null;
-        File letterDir = (letterId != null && !letterId.trim().isEmpty() && resourcesDir != null)
-                ? new File(resourcesDir, "reports/" + letterId)
-                : null;
-
-        // A. Relativo a la raíz del workspace (ej: resources/data/xml/ETIPLET002.xml)
-        if (workspaceRoot != null && workspaceRoot.exists()) {
-            File fWs = new File(workspaceRoot, relPath);
-            String canonWs = toCanonicalPath(fWs);
-            if (!tested.contains(canonWs)) {
-                tested.add(canonWs);
-            }
-            if (fWs.exists() && fWs.isFile() && isWithinResourcesDir(fWs)) {
-                return fWs;
-            }
-        }
-
-        // B. Relativo a resources/ (ej: data/xml/ETIPLET002.xml)
-        if (resourcesDir != null && resourcesDir.exists()) {
-            File fRes = new File(resourcesDir, relPath);
-            String canonRes = toCanonicalPath(fRes);
-            if (!tested.contains(canonRes)) {
-                tested.add(canonRes);
-            }
-            if (fRes.exists() && fRes.isFile() && isWithinResourcesDir(fRes)) {
-                return fRes;
-            }
-        }
-
-        // C. Relativo al directorio de la carta (ej: ../../data/xml/ETIPLET002.xml)
-        if (letterDir != null && letterDir.exists()) {
-            File fLetter = new File(letterDir, relPath);
-            String canonLetter = toCanonicalPath(fLetter);
-            if (!tested.contains(canonLetter)) {
-                tested.add(canonLetter);
-            }
-            if (fLetter.exists() && fLetter.isFile() && isWithinResourcesDir(fLetter)) {
-                return fLetter;
-            }
-        }
-
-        return null;
+        return dataFileResolver.resolveDataFile(getResourcesDir(), letterId, location, testedPathsOut);
     }
 
     /**
      * Extrae el valor de la etiqueta <location> desde el XML del Data Adapter.
+     * Delega en DataFileResolver (hallazgo A-5).
      */
     public String extractLocationFromXml(String dataAdapterXml) {
-        if (dataAdapterXml == null || dataAdapterXml.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            DocumentBuilder builder = createSecureDocumentBuilder();
-            Document doc = builder.parse(new ByteArrayInputStream(dataAdapterXml.getBytes(StandardCharsets.UTF_8)));
-            Element root = doc.getDocumentElement();
-            if (root == null) return null;
-            NodeList dataFileNodes = root.getElementsByTagName("dataFile");
-            if (dataFileNodes.getLength() > 0) {
-                Element dataFileEl = (Element) dataFileNodes.item(0);
-                String loc = getTagText(dataFileEl, "location");
-                if (loc != null && !loc.trim().isEmpty()) return loc.trim();
-            }
-            return getTagText(root, "location");
-        } catch (Exception e) {
-            return null;
-        }
+        return dataFileResolver.extractLocationFromXml(dataAdapterXml);
     }
 
     /**
@@ -578,7 +453,7 @@ public class LetterResourceService {
         // 1. Parsear el XML del Data Adapter
         Document adapterDoc;
         try {
-            DocumentBuilder builder = createSecureDocumentBuilder();
+            DocumentBuilder builder = dataFileResolver.createSecureDocumentBuilder();
             adapterDoc = builder.parse(new ByteArrayInputStream(dataAdapterXml.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception ex) {
             log.warn("Error al parsear XML del Data Adapter: {}", ex.getMessage());
@@ -600,20 +475,20 @@ public class LetterResourceService {
             );
         }
 
-        String adapterName = getTagText(root, "name");
+        String adapterName = dataFileResolver.getTagText(root, "name");
         String location = null;
         NodeList dataFileNodes = root.getElementsByTagName("dataFile");
         if (dataFileNodes.getLength() > 0) {
             Element dataFileEl = (Element) dataFileNodes.item(0);
-            location = getTagText(dataFileEl, "location");
+            location = dataFileResolver.getTagText(dataFileEl, "location");
         }
         if (location == null || location.trim().isEmpty()) {
-            location = getTagText(root, "location");
+            location = dataFileResolver.getTagText(root, "location");
         }
 
-        String selectExpression = getTagText(root, "selectExpression");
-        String locale = getTagText(root, "locale");
-        String timeZone = getTagText(root, "timeZone");
+        String selectExpression = dataFileResolver.getTagText(root, "selectExpression");
+        String locale = dataFileResolver.getTagText(root, "locale");
+        String timeZone = dataFileResolver.getTagText(root, "timeZone");
 
         if (location == null || location.trim().isEmpty()) {
             return TestDataAdapterResponse.error(
@@ -641,7 +516,7 @@ public class LetterResourceService {
         Document dataDoc;
         long fileSize = resolvedFile.length();
         try {
-            DocumentBuilder dataBuilder = createSecureDocumentBuilder();
+            DocumentBuilder dataBuilder = dataFileResolver.createSecureDocumentBuilder();
             dataDoc = dataBuilder.parse(resolvedFile);
         } catch (Exception ex) {
             log.warn("El archivo de datos XML está corrupto o mal formado: {}", ex.getMessage());
@@ -693,31 +568,6 @@ public class LetterResourceService {
                 timeZone != null ? timeZone : "America/Montevideo",
                 xmlContent
         );
-    }
-
-    /**
-     * Crea un DocumentBuilder endurecido contra XXE (XML External Entity) para parsear
-     * XML de origen no confiable (Data Adapter y datos XML recibidos del cliente):
-     * deshabilita DOCTYPE, entidades externas y expansión de entidades.
-     */
-    private static DocumentBuilder createSecureDocumentBuilder() throws ParserConfigurationException {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(false);
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-        factory.setXIncludeAware(false);
-        factory.setExpandEntityReferences(false);
-        return factory.newDocumentBuilder();
-    }
-
-    private String getTagText(Element parent, String tagName) {
-        NodeList list = parent.getElementsByTagName(tagName);
-        if (list.getLength() > 0 && list.item(0).getTextContent() != null) {
-            return list.item(0).getTextContent().trim();
-        }
-        return null;
     }
 
     /**
