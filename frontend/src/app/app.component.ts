@@ -789,22 +789,15 @@ export class AppComponent implements OnInit, OnDestroy {
 
   selectExistingAdapter(adapter: DataAdapterOptionInfo): void {
     this.linkDataAdapterToJrxml(adapter.relativePath);
-    const newAdapterXml =
-      `<?xml version="1.0" encoding="UTF-8"?>\n` +
-      `<xmlDataAdapter class="net.sf.jasperreports.data.xml.XmlDataAdapterImpl">\n` +
-      `  <name>${adapter.name}</name>\n` +
-      `  <dataFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="repositoryDataLocation">\n` +
-      `    <location>${adapter.location || ''}</location>\n` +
-      `  </dataFile>\n` +
-      `  <useConnection>true</useConnection>\n` +
-      `  <namespaceAware>false</namespaceAware>\n` +
-      `  <selectExpression></selectExpression>\n` +
-      `  <locale>es_ES</locale>\n` +
-      `  <timeZone>America/Montevideo</timeZone>\n` +
-      `</xmlDataAdapter>\n`;
+    const model: XmlDataAdapterModel = {
+      ...getDefaultXmlDataAdapterModel(),
+      name: adapter.name,
+      location: adapter.location || ''
+    };
+    const newAdapterXml = serializeXmlDataAdapter(model);
 
     this.dataAdapter.set(newAdapterXml);
-    this.dataAdapterModel.set(parseXmlDataAdapter(newAdapterXml, this.selectedLetterId() || undefined));
+    this.dataAdapterModel.set(model);
     this.closeSelectAdapterModal();
     if (adapter.location && this.selectedLetterId()) {
       this.reloadXmlDataFromLetter(this.selectedLetterId()!);
@@ -815,23 +808,14 @@ export class AppComponent implements OnInit, OnDestroy {
     const letterId = this.selectedLetterId();
     if (!letterId) return;
 
+    // Convención de ruta usada en el resto del flujo (relativa a la raíz del workspace),
+    // distinta del "src\main\resources\..." que trae getDefaultXmlDataAdapterModel() por defecto.
     const xmlLocation = `resources\\data\\xml\\${letterId}.xml`;
-    const newAdapterXml =
-      `<?xml version="1.0" encoding="UTF-8"?>\n` +
-      `<xmlDataAdapter class="net.sf.jasperreports.data.xml.XmlDataAdapterImpl">\n` +
-      `  <name>xmlDataAdapter_${letterId}</name>\n` +
-      `  <dataFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="repositoryDataLocation">\n` +
-      `    <location>${xmlLocation}</location>\n` +
-      `  </dataFile>\n` +
-      `  <useConnection>true</useConnection>\n` +
-      `  <namespaceAware>false</namespaceAware>\n` +
-      `  <selectExpression></selectExpression>\n` +
-      `  <locale>es_ES</locale>\n` +
-      `  <timeZone>America/Montevideo</timeZone>\n` +
-      `</xmlDataAdapter>\n`;
+    const model: XmlDataAdapterModel = { ...getDefaultXmlDataAdapterModel(letterId), location: xmlLocation };
+    const newAdapterXml = serializeXmlDataAdapter(model);
 
     this.dataAdapter.set(newAdapterXml);
-    this.dataAdapterModel.set(parseXmlDataAdapter(newAdapterXml, letterId));
+    this.dataAdapterModel.set(model);
     this.linkDataAdapterToJrxml('xmlDataAdapter.xml');
     this.linkDataXmlToAdapter(xmlLocation);
     this.reloadXmlDataFromLetter(letterId);
