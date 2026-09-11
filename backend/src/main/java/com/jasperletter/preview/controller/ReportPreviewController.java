@@ -1,5 +1,6 @@
 package com.jasperletter.preview.controller;
 
+import com.jasperletter.preview.dto.ErrorResponse;
 import com.jasperletter.preview.dto.PreviewRequest;
 import com.jasperletter.preview.service.JasperReportService;
 import org.slf4j.Logger;
@@ -61,11 +62,11 @@ public class ReportPreviewController {
             while (root.getCause() != null && root.getCause() != root) {
                 root = root.getCause();
             }
-            Map<String, Object> errorBody = new HashMap<>();
-            errorBody.put("status", "ERROR");
-            errorBody.put("message", ex.getMessage());
-            errorBody.put("cause", root.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody);
+            // 400, no 500: un fallo de compilación/llenado de JasperReports es, con la
+            // información disponible aquí, casi siempre un problema en la plantilla o los
+            // datos enviados por el cliente, no un error inesperado del servidor.
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("ERROR", ex.getMessage(), root.getMessage()));
         }
     }
 }

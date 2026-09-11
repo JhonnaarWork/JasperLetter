@@ -6,6 +6,8 @@ import com.jasperletter.preview.dto.DataFileInfo;
 import com.jasperletter.preview.dto.LetterDetailResponse;
 import com.jasperletter.preview.dto.LetterResourceInfo;
 import com.jasperletter.preview.dto.TestDataAdapterResponse;
+import com.jasperletter.preview.exception.LetterNotFoundException;
+import com.jasperletter.preview.exception.ValidationException;
 import com.jasperletter.preview.util.JrxmlFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +59,7 @@ public class LetterResourceService {
      */
     String requireValidLetterId(String letterId) {
         if (!isValidLetterId(letterId)) {
-            throw new IllegalArgumentException("Identificador de carta inválido: " + letterId);
+            throw new ValidationException("Identificador de carta inválido: " + letterId);
         }
         return letterId.trim();
     }
@@ -173,10 +175,17 @@ public class LetterResourceService {
      * Obtiene el contenido completo de una carta (JRXML, DataAdapter y XML de datos)
      */
     public LetterDetailResponse getLetterDetail(String letterId) throws IOException {
-        letterId = requireValidLetterId(letterId);
+        try {
+            letterId = requireValidLetterId(letterId);
+        } catch (ValidationException e) {
+            // Un id con formato inválido nunca puede corresponder a una carta real: se trata
+            // como "no encontrada" en vez de propagar el error de validación (evita revelar si
+            // el problema fue el formato del id o que la carta simplemente no existe).
+            throw new LetterNotFoundException("Carta no encontrada: " + letterId);
+        }
         File letterDir = new File(getResourcesDir(), "reports/" + letterId);
         if (!letterDir.exists() || !letterDir.isDirectory()) {
-            throw new IllegalArgumentException("Carta no encontrada: " + letterId);
+            throw new LetterNotFoundException("Carta no encontrada: " + letterId);
         }
 
         // Buscar el archivo JRXML preferente
@@ -186,7 +195,7 @@ public class LetterResourceService {
             if (files != null && files.length > 0) {
                 jrxmlFile = files[0];
             } else {
-                throw new IllegalArgumentException("No se encontró ningún archivo .jrxml para la carta " + letterId);
+                throw new LetterNotFoundException("No se encontró ningún archivo .jrxml para la carta " + letterId);
             }
         }
 
@@ -716,16 +725,16 @@ public class LetterResourceService {
      */
     public LetterDetailResponse createLetter(CreateLetterRequest req) throws IOException {
         if (req.getLetterId() == null || req.getLetterId().trim().isEmpty()) {
-            throw new IllegalArgumentException("El ID de la carta es obligatorio.");
+            throw new ValidationException("El ID de la carta es obligatorio.");
         }
         String cleanId = req.getLetterId().trim().toUpperCase().replaceAll("[^A-Z0-9_-]", "");
         if (cleanId.isEmpty()) {
-            throw new IllegalArgumentException("El ID de la carta contiene caracteres inválidos.");
+            throw new ValidationException("El ID de la carta contiene caracteres inválidos.");
         }
 
         File letterDir = new File(getResourcesDir(), "reports/" + cleanId);
         if (letterDir.exists()) {
-            throw new IllegalArgumentException("Ya existe una carta con el identificador " + cleanId);
+            throw new ValidationException("Ya existe una carta con el identificador " + cleanId);
         }
         letterDir.mkdirs();
 

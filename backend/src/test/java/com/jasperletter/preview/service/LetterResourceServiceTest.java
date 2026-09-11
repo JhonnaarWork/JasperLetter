@@ -1,6 +1,9 @@
 package com.jasperletter.preview.service;
 
+import com.jasperletter.preview.dto.CreateLetterRequest;
 import com.jasperletter.preview.dto.TestDataAdapterResponse;
+import com.jasperletter.preview.exception.LetterNotFoundException;
+import com.jasperletter.preview.exception.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -73,7 +76,7 @@ class LetterResourceServiceTest {
 
     @Test
     void requireValidLetterId_throwsForInvalidId() {
-        assertThrows(IllegalArgumentException.class, () -> service.requireValidLetterId("../../etc/passwd"));
+        assertThrows(ValidationException.class, () -> service.requireValidLetterId("../../etc/passwd"));
     }
 
     @Test
@@ -198,5 +201,36 @@ class LetterResourceServiceTest {
 
         assertFalse(result.isSuccess());
         assertEquals("INVALID_ADAPTER_XML", result.getStatus());
+    }
+
+    // ---------- excepciones tipadas (A-3) ----------
+
+    @Test
+    void getLetterDetail_throwsLetterNotFound_whenDirectoryMissing() {
+        assertThrows(LetterNotFoundException.class, () -> service.getLetterDetail("NO_EXISTE"));
+    }
+
+    @Test
+    void getLetterDetail_throwsLetterNotFound_notValidationException_whenLetterIdMalformed() {
+        // Un id con formato inválido se trata como "no encontrada", no como error de validación:
+        // evita revelar si el problema fue el formato del id o que la carta no existe.
+        assertThrows(LetterNotFoundException.class, () -> service.getLetterDetail("../../etc/passwd"));
+    }
+
+    @Test
+    void createLetter_throwsValidationException_whenLetterIdMissing() {
+        CreateLetterRequest req = new CreateLetterRequest();
+        req.setLetterId("   ");
+
+        assertThrows(ValidationException.class, () -> service.createLetter(req));
+    }
+
+    @Test
+    void createLetter_throwsValidationException_whenLetterAlreadyExists() throws IOException {
+        Files.createDirectories(resourcesDir.resolve("reports/YAEXISTE"));
+        CreateLetterRequest req = new CreateLetterRequest();
+        req.setLetterId("YAEXISTE");
+
+        assertThrows(ValidationException.class, () -> service.createLetter(req));
     }
 }

@@ -16,12 +16,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Los errores de estos endpoints (carta no encontrada, validación, fallos de E/S) se manejan
+ * de forma centralizada en GlobalExceptionHandler: los métodos no atrapan excepciones, las
+ * dejan propagar.
+ */
 @RestController
 @RequestMapping("/api/resources")
 public class LetterResourceController {
@@ -46,100 +52,61 @@ public class LetterResourceController {
      * Obtiene el contenido completo de una carta específica (JRXML, XML de datos, DataAdapter)
      */
     @GetMapping("/letters/{letterId}")
-    public ResponseEntity<?> getLetterDetail(@PathVariable("letterId") String letterId) {
-        try {
-            LetterDetailResponse detail = letterResourceService.getLetterDetail(letterId);
-            return ResponseEntity.ok(detail);
-        } catch (IllegalArgumentException ex) {
-            Map<String, Object> err = new HashMap<>();
-            err.put("status", "NOT_FOUND");
-            err.put("message", ex.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(err);
-        } catch (Exception ex) {
-            log.error("Error al obtener detalle de carta {}", letterId, ex);
-            Map<String, Object> err = new HashMap<>();
-            err.put("status", "ERROR");
-            err.put("message", ex.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
-        }
+    public ResponseEntity<LetterDetailResponse> getLetterDetail(@PathVariable("letterId") String letterId) throws IOException {
+        LetterDetailResponse detail = letterResourceService.getLetterDetail(letterId);
+        return ResponseEntity.ok(detail);
     }
 
     /**
      * Guarda modificaciones a la plantilla JRXML y datos XML en disco en su formato original
      */
     @PostMapping("/letters/{letterId}/save")
-    public ResponseEntity<?> saveLetter(@PathVariable("letterId") String letterId, @RequestBody SaveLetterRequest request) {
-        try {
-            boolean saveJrxml = request.getSaveJrxml() != null ? request.getSaveJrxml() : true;
-            boolean saveDataAdapter = request.getSaveDataAdapter() != null ? request.getSaveDataAdapter() : true;
-            boolean saveXmlData = request.getSaveXmlData() != null ? request.getSaveXmlData() : true;
+    public ResponseEntity<Map<String, Object>> saveLetter(@PathVariable("letterId") String letterId, @RequestBody SaveLetterRequest request) throws IOException {
+        boolean saveJrxml = request.getSaveJrxml() != null ? request.getSaveJrxml() : true;
+        boolean saveDataAdapter = request.getSaveDataAdapter() != null ? request.getSaveDataAdapter() : true;
+        boolean saveXmlData = request.getSaveXmlData() != null ? request.getSaveXmlData() : true;
 
-            letterResourceService.saveLetter(
-                    letterId,
-                    request.getJrxml(),
-                    saveJrxml,
-                    request.getXmlData(),
-                    saveXmlData,
-                    request.getDataAdapter(),
-                    saveDataAdapter,
-                    request.getFormat()
-            );
+        letterResourceService.saveLetter(
+                letterId,
+                request.getJrxml(),
+                saveJrxml,
+                request.getXmlData(),
+                saveXmlData,
+                request.getDataAdapter(),
+                saveDataAdapter,
+                request.getFormat()
+        );
 
-            boolean isConnected = letterResourceService.isDataAdapterConnected(letterId);
+        boolean isConnected = letterResourceService.isDataAdapterConnected(letterId);
 
-            String reloadedXmlData = null;
-            if (isConnected) {
-                File xmlFile = letterResourceService.getDataFileForLetter(letterId);
-                if (xmlFile != null && xmlFile.exists() && xmlFile.isFile()) {
-                    try {
-                        reloadedXmlData = Files.readString(xmlFile.toPath(), StandardCharsets.UTF_8);
-                    } catch (Exception ignored) {
-                    }
+        String reloadedXmlData = null;
+        if (isConnected) {
+            File xmlFile = letterResourceService.getDataFileForLetter(letterId);
+            if (xmlFile != null && xmlFile.exists() && xmlFile.isFile()) {
+                try {
+                    reloadedXmlData = Files.readString(xmlFile.toPath(), StandardCharsets.UTF_8);
+                } catch (Exception ignored) {
                 }
             }
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "SUCCESS");
-            response.put("message", "Carta " + letterId + " guardada exitosamente en resources/reports/" + letterId);
-            response.put("dataAdapterConnected", isConnected);
-            if (reloadedXmlData != null) {
-                response.put("xmlData", reloadedXmlData);
-            }
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException ex) {
-            Map<String, Object> err = new HashMap<>();
-            err.put("status", "VALIDATION_ERROR");
-            err.put("message", ex.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
-        } catch (Exception ex) {
-            log.error("Error al guardar carta {}", letterId, ex);
-            Map<String, Object> err = new HashMap<>();
-            err.put("status", "ERROR");
-            err.put("message", "Error al guardar carta en disco: " + ex.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
         }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "SUCCESS");
+        response.put("message", "Carta " + letterId + " guardada exitosamente en resources/reports/" + letterId);
+        response.put("dataAdapterConnected", isConnected);
+        if (reloadedXmlData != null) {
+            response.put("xmlData", reloadedXmlData);
+        }
+        return ResponseEntity.ok(response);
     }
 
     /**
      * Crea una nueva carta desde cero en resources/reports/{letterId}/
      */
     @PostMapping("/letters/create")
-    public ResponseEntity<?> createLetter(@RequestBody CreateLetterRequest request) {
-        try {
-            LetterDetailResponse detail = letterResourceService.createLetter(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(detail);
-        } catch (IllegalArgumentException ex) {
-            Map<String, Object> err = new HashMap<>();
-            err.put("status", "VALIDATION_ERROR");
-            err.put("message", ex.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
-        } catch (Exception ex) {
-            log.error("Error al crear carta {}", request.getLetterId(), ex);
-            Map<String, Object> err = new HashMap<>();
-            err.put("status", "ERROR");
-            err.put("message", "Error al crear carta en disco: " + ex.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
-        }
+    public ResponseEntity<LetterDetailResponse> createLetter(@RequestBody CreateLetterRequest request) throws IOException {
+        LetterDetailResponse detail = letterResourceService.createLetter(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(detail);
     }
 
     /**
@@ -162,20 +129,12 @@ public class LetterResourceController {
      * Crea un nuevo archivo de datos XML en resources/data/xml/
      */
     @PostMapping("/data-xml-files/create")
-    public ResponseEntity<?> createDataXmlFile(@RequestBody Map<String, String> body) {
-        try {
-            String letterId = body.get("letterId");
-            String fileName = body.get("fileName");
-            String content = body.get("content");
-            DataFileInfo info = letterResourceService.createDataXmlFile(letterId, fileName, content);
-            return ResponseEntity.status(HttpStatus.CREATED).body(info);
-        } catch (Exception ex) {
-            log.error("Error al crear archivo de datos XML", ex);
-            Map<String, Object> err = new HashMap<>();
-            err.put("status", "ERROR");
-            err.put("message", "Error al crear archivo XML: " + ex.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
-        }
+    public ResponseEntity<DataFileInfo> createDataXmlFile(@RequestBody Map<String, String> body) throws IOException {
+        String letterId = body.get("letterId");
+        String fileName = body.get("fileName");
+        String content = body.get("content");
+        DataFileInfo info = letterResourceService.createDataXmlFile(letterId, fileName, content);
+        return ResponseEntity.status(HttpStatus.CREATED).body(info);
     }
 
     /**
