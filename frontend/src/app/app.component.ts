@@ -32,6 +32,7 @@ import {
   TestDataAdapterResponse
 } from './models/data-adapter.model';
 import { XmlCodeEditorComponent } from './components/xml-code-editor/xml-code-editor.component';
+import { CreateLetterModalComponent } from './components/create-letter-modal/create-letter-modal.component';
 import { environment } from '../environments/environment';
 
 /**
@@ -53,7 +54,7 @@ interface JasperEditorInternalStore {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, JasperEditorComponent, XmlCodeEditorComponent],
+  imports: [CommonModule, FormsModule, JasperEditorComponent, XmlCodeEditorComponent, CreateLetterModalComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush

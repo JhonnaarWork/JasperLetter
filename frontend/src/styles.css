@@ -176,3 +176,311 @@ lib-jasper-toolbar .zoom + .sep {
   margin: 0 !important;
 }
 
+/* ==========================================================================
+   Sistema de diseño compartido: botones, modales y campos de formulario
+   Movido desde app.component.css (hallazgo F-1): estas clases las usan
+   AppComponent y cualquier componente de modal extraído de él (ej.
+   CreateLetterModalComponent), así que deben vivir en un stylesheet global
+   en vez de quedar atadas a la encapsulación de vista de un solo componente.
+   ========================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: 'Soho', Arial, sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed !important;
+}
+
+.btn-primary {
+  background: #2E6C99;
+  color: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(46, 108, 153, 0.2);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #23587D;
+  box-shadow: 0 2px 4px rgba(46, 108, 153, 0.3);
+}
+
+.btn-secondary {
+  background: #FFFFFF;
+  border-color: #D5DCE0;
+  color: #333333;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #F0F4F8;
+  border-color: #2E6C99;
+  color: #2E6C99;
+}
+
+.spinner-inline {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+.btn-secondary .spinner-inline {
+  border: 2px solid rgba(46, 108, 153, 0.2);
+  border-top-color: #2E6C99;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.da-req {
+  color: #D32F2F;
+  font-weight: bold;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.da-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  animation: modalFadeIn 0.15s ease-out;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.da-modal-dialog {
+  background: #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.12);
+  width: 100%;
+  max-width: 580px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid #CBD5E1;
+}
+
+.da-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #E2E8F0;
+  background: #F8FAFC;
+}
+
+.da-modal-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.da-modal-header-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.da-modal-header-title h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1E293B;
+  font-family: 'Soho', Arial, sans-serif;
+}
+
+.da-modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: #64748B;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.da-modal-close-btn:hover {
+  color: #1E293B;
+}
+
+.da-modal-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  max-height: 65vh;
+}
+
+.da-modal-message-box {
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.da-modal-message-box p {
+  margin: 0;
+}
+
+.box-error {
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  color: #991B1B;
+}
+
+.da-modal-footer {
+  padding: 10px 20px;
+  background: #F8FAFC;
+  border-top: 1px solid #E2E8F0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.form-input {
+  padding: 8px 12px;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.form-input:focus {
+  border-color: #0F5B9E;
+  box-shadow: 0 0 0 2px rgba(15, 91, 158, 0.15);
+}
+
+.uppercase-input {
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.form-hint {
+  font-size: 11px;
+  color: #64748B;
+}
+
+.form-hint code {
+  background: #F1F5F9;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: #0F5B9E;
+}
+
+.format-options-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.radio-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #F8FAFC;
+  transition: all 0.15s ease;
+}
+
+.radio-card:hover {
+  border-color: #CBD5E1;
+  background: #F1F5F9;
+}
+
+.radio-card.selected {
+  border-color: #0F5B9E;
+  background: #EFF6FF;
+}
+
+.radio-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.radio-card-content strong {
+  font-size: 12px;
+  color: #1E293B;
+}
+
+.radio-card-content span {
+  font-size: 11px;
+  color: #64748B;
+  line-height: 1.3;
+}
+
+.form-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #334155;
+  cursor: pointer;
+}
+

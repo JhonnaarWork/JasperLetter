@@ -1238,119 +1238,20 @@
   <!-- MODAL 1: CREAR NUEVA CARTA DESDE CERO                                -->
   <!-- ===================================================================== -->
   @if (createLetterModalOpen()) {
-    <div class="da-modal-overlay" (click)="closeCreateLetterModal()">
-      <div class="da-modal-dialog create-letter-dialog" (click)="$event.stopPropagation()">
-        <div class="da-modal-header">
-          <div class="da-modal-header-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F5B9E" stroke-width="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="12" y1="18" x2="12" y2="12"></line>
-              <line x1="9" y1="15" x2="15" y2="15"></line>
-            </svg>
-          </div>
-          <div class="da-modal-header-title">
-            <h3>{{ t('modal.createLetterTitle') }}</h3>
-            <span class="modal-dialog-subtitle">{{ t('modal.createLetterDesc') }}</span>
-          </div>
-          <button type="button" class="da-modal-close-btn" (click)="closeCreateLetterModal()">×</button>
-        </div>
-
-        <div class="da-modal-body">
-          @if (createLetterError()) {
-            <div class="da-modal-message-box box-error">
-              <p>{{ createLetterError() }}</p>
-            </div>
-          }
-
-          <div class="form-field-group">
-            <label class="form-label" for="new-letter-id">
-              {{ t('modal.letterIdLabel') }} <span class="da-req">*</span>
-            </label>
-            <input
-              id="new-letter-id"
-              type="text"
-              class="form-input code-font uppercase-input"
-              [ngModel]="newLetterId()"
-              (ngModelChange)="newLetterId.set($event)"
-              placeholder="Ej: ETIPLET004"
-              autofocus
-            />
-            <span class="form-hint">Se creará en <code>resources/reports/&#123;ID&#125;/&#123;ID&#125;.jrxml</code> con estructura estándar de inCMS.</span>
-          </div>
-
-          <div class="form-field-group">
-            <label class="form-label">{{ t('modal.formatLabel') }}</label>
-            <div class="format-options-row">
-              <label class="radio-card" [class.selected]="newLetterFormat() === 'JR6'">
-                <input
-                  type="radio"
-                  name="newLetterFormat"
-                  value="JR6"
-                  [checked]="newLetterFormat() === 'JR6'"
-                  (change)="newLetterFormat.set('JR6')"
-                />
-                <div class="radio-card-content">
-                  <strong>JasperReports 6 (Tradicional)</strong>
-                  <span>Recomendado para servidores de producción existentes</span>
-                </div>
-              </label>
-              <label class="radio-card" [class.selected]="newLetterFormat() === 'JR7'">
-                <input
-                  type="radio"
-                  name="newLetterFormat"
-                  value="JR7"
-                  [checked]="newLetterFormat() === 'JR7'"
-                  (change)="newLetterFormat.set('JR7')"
-                />
-                <div class="radio-card-content">
-                  <strong>JasperReports 7 (Moderno)</strong>
-                  <span>Formato con esquema moderno JasperReports 7</span>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <div class="form-checkbox-group">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [checked]="newLetterCreateAdapter()"
-                (change)="newLetterCreateAdapter.set(!newLetterCreateAdapter())"
-              />
-              <span>{{ t('modal.createAdapterLabel') }}</span>
-            </label>
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                [checked]="newLetterCreateXml()"
-                (change)="newLetterCreateXml.set(!newLetterCreateXml())"
-              />
-              <span>{{ t('modal.createXmlLabel') }}</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="da-modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeCreateLetterModal()">
-            {{ t('modal.cancel') }}
-          </button>
-          <button
-            type="button"
-            class="btn btn-primary"
-            [disabled]="creatingLetter() || !newLetterId().trim()"
-            (click)="submitCreateLetter()"
-          >
-            @if (creatingLetter()) {
-              <span class="spinner-inline"></span>
-              <span>Creando...</span>
-            } @else {
-              <span>{{ t('modal.createBtn') }}</span>
-            }
-          </button>
-        </div>
-      </div>
-    </div>
+    <app-create-letter-modal
+      [letterId]="newLetterId()"
+      (letterIdChange)="newLetterId.set($event)"
+      [format]="newLetterFormat()"
+      (formatChange)="newLetterFormat.set($event)"
+      [createAdapter]="newLetterCreateAdapter()"
+      (createAdapterChange)="newLetterCreateAdapter.set($event)"
+      [createXmlData]="newLetterCreateXml()"
+      (createXmlDataChange)="newLetterCreateXml.set($event)"
+      [creating]="creatingLetter()"
+      [error]="createLetterError()"
+      (submitCreate)="submitCreateLetter()"
+      (close)="closeCreateLetterModal()"
+    />
   }
 
   <!-- ===================================================================== -->
