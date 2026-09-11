@@ -1,6 +1,9 @@
 package com.jasperletter.preview.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class CreateLetterRequest {
+    @NotBlank(message = "El ID de la carta es obligatorio.")
     private String letterId;
     private String name;
     private String format; // "JR6" | "JR7"

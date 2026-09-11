@@ -3,6 +3,7 @@ package com.jasperletter.preview.controller;
 import com.jasperletter.preview.dto.ErrorResponse;
 import com.jasperletter.preview.dto.PreviewRequest;
 import com.jasperletter.preview.service.JasperReportService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -41,7 +42,7 @@ public class ReportPreviewController {
      * Endpoint principal para previsualizar una carta JRXML en formato PDF.
      */
     @PostMapping(value = "/preview", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> previewReport(@RequestBody PreviewRequest request) {
+    public ResponseEntity<?> previewReport(@Valid @RequestBody PreviewRequest request) {
         try {
             byte[] pdfContent = jasperReportService.generatePdfPreview(
                     request.getJrxml(),

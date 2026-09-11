@@ -1,10 +1,13 @@
 package com.jasperletter.preview.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 import java.util.Collections;
 import java.util.Map;
 
 public class PreviewRequest {
 
+    @NotBlank(message = "El contenido JRXML no puede estar vacío")
     private String jrxml;
     private Map<String, Object> parameters;
 

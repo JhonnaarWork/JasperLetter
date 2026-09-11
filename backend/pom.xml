@@ -38,6 +38,12 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Bean Validation (@Valid / @NotBlank en los DTOs de request) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
         <!-- JasperReports 7 -->
         <dependency>
             <groupId>net.sf.jasperreports</groupId>

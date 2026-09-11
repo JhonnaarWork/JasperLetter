@@ -9,6 +9,7 @@ import com.jasperletter.preview.dto.SaveLetterRequest;
 import com.jasperletter.preview.dto.TestDataAdapterRequest;
 import com.jasperletter.preview.dto.TestDataAdapterResponse;
 import com.jasperletter.preview.service.LetterResourceService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -104,7 +105,7 @@ public class LetterResourceController {
      * Crea una nueva carta desde cero en resources/reports/{letterId}/
      */
     @PostMapping("/letters/create")
-    public ResponseEntity<LetterDetailResponse> createLetter(@RequestBody CreateLetterRequest request) throws IOException {
+    public ResponseEntity<LetterDetailResponse> createLetter(@Valid @RequestBody CreateLetterRequest request) throws IOException {
         LetterDetailResponse detail = letterResourceService.createLetter(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(detail);
     }
