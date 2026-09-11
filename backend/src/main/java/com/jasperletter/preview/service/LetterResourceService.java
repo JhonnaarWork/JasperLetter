@@ -17,6 +17,7 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
@@ -425,9 +426,7 @@ public class LetterResourceService {
             return null;
         }
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setNamespaceAware(false);
-            DocumentBuilder builder = factory.newDocumentBuilder();
+            DocumentBuilder builder = createSecureDocumentBuilder();
             Document doc = builder.parse(new ByteArrayInputStream(dataAdapterXml.getBytes(StandardCharsets.UTF_8)));
             Element root = doc.getDocumentElement();
             if (root == null) return null;
@@ -522,9 +521,7 @@ public class LetterResourceService {
         // 1. Parsear el XML del Data Adapter
         Document adapterDoc;
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setNamespaceAware(false);
-            DocumentBuilder builder = factory.newDocumentBuilder();
+            DocumentBuilder builder = createSecureDocumentBuilder();
             adapterDoc = builder.parse(new ByteArrayInputStream(dataAdapterXml.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception ex) {
             log.warn("Error al parsear XML del Data Adapter: {}", ex.getMessage());
@@ -587,9 +584,7 @@ public class LetterResourceService {
         Document dataDoc;
         long fileSize = resolvedFile.length();
         try {
-            DocumentBuilderFactory dataFactory = DocumentBuilderFactory.newInstance();
-            dataFactory.setNamespaceAware(false);
-            DocumentBuilder dataBuilder = dataFactory.newDocumentBuilder();
+            DocumentBuilder dataBuilder = createSecureDocumentBuilder();
             dataDoc = dataBuilder.parse(resolvedFile);
         } catch (Exception ex) {
             log.warn("El archivo de datos XML está corrupto o mal formado: {}", ex.getMessage());
@@ -641,6 +636,23 @@ public class LetterResourceService {
                 timeZone != null ? timeZone : "America/Montevideo",
                 xmlContent
         );
+    }
+
+    /**
+     * Crea un DocumentBuilder endurecido contra XXE (XML External Entity) para parsear
+     * XML de origen no confiable (Data Adapter y datos XML recibidos del cliente):
+     * deshabilita DOCTYPE, entidades externas y expansión de entidades.
+     */
+    private static DocumentBuilder createSecureDocumentBuilder() throws ParserConfigurationException {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(false);
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        factory.setXIncludeAware(false);
+        factory.setExpandEntityReferences(false);
+        return factory.newDocumentBuilder();
     }
 
     private String getTagText(Element parent, String tagName) {
