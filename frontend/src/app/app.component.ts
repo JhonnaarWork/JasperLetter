@@ -34,6 +34,22 @@ import {
 import { XmlCodeEditorComponent } from './components/xml-code-editor/xml-code-editor.component';
 import { environment } from '../environments/environment';
 
+/**
+ * Forma mínima del store interno de @florianrauscha/ngx-jrxml-editor que este componente
+ * necesita para seleccionar elementos y editar su contenido desde el modal de texto. No es
+ * parte de la API pública documentada de la librería — puede cambiar o desaparecer en
+ * cualquier actualización sin que sea un breaking change desde su punto de vista. Se accede a
+ * él únicamente a través de AppComponent.getEditorStore(), de forma que una futura ruptura
+ * solo obligue a tocar ese único método en vez de los puntos dispersos donde se use.
+ */
+interface JasperEditorInternalStore {
+  stopEditing(): void;
+  selectedElement(): { kind: string; text?: string; expression?: string } | null | undefined;
+  selections(): unknown[] | undefined;
+  select(path: unknown): void;
+  updateSelected(updater: (el: any) => any): void;
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -936,6 +952,11 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private activeEditingPath: any = null;
 
+  /** Único punto de acceso al store interno no documentado del editor visual (ver F-4). */
+  private getEditorStore(): JasperEditorInternalStore | undefined {
+    return (this.editorComp as unknown as { store?: JasperEditorInternalStore } | undefined)?.store;
+  }
+
   private handleDocumentDblClick = (event: MouseEvent): void => {
     // Solo interceptar en la pestaña del Diseñador Visual
     if (this.leftTab() !== 'editor') return;
@@ -954,7 +975,7 @@ export class AppComponent implements OnInit, OnDestroy {
     event.stopPropagation();
     event.stopImmediatePropagation();
 
-    const store = (this.editorComp as any)?.store;
+    const store = this.getEditorStore();
     if (store) {
       store.stopEditing();
 
@@ -1104,20 +1125,21 @@ export class AppComponent implements OnInit, OnDestroy {
 
   closeTextModal(): void {
     this.textModalOpen.set(false);
-    const store = (this.editorComp as any)?.store;
+    const store = this.getEditorStore();
     if (store) {
       store.stopEditing();
     }
   }
 
   saveTextModal(): void {
-    const store = (this.editorComp as any)?.store;
+    const store = this.getEditorStore();
     const kind = this.textModalKind();
     const newContent = this.modalTextareaRef?.nativeElement?.value ?? this.textModalContent();
     this.textModalContent.set(newContent);
 
     if (store) {
-      if (this.activeEditingPath && (!store.selections() || store.selections().length === 0)) {
+      const currentSelections = store.selections();
+      if (this.activeEditingPath && (!currentSelections || currentSelections.length === 0)) {
         store.select(this.activeEditingPath);
       }
 
