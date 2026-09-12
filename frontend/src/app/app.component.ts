@@ -1,41 +1,14 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  HostListener,
-  OnDestroy,
-  OnInit,
-  ViewChild,
-  inject,
-  signal
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { JasperEditorComponent } from '@florianrauscha/ngx-jrxml-editor';
 import { I18nService, Language } from './services/i18n.service';
 import { CreateLetterRequest, DataAdapterOptionInfo, DataFileInfo } from './models/letter-resource.model';
-import { SpellcheckService, SpellError } from './services/spellcheck.service';
 import { XmlDataAdapterModel } from './models/data-adapter.model';
 import { XmlCodeEditorComponent } from './components/xml-code-editor/xml-code-editor.component';
 import { CreateLetterModalComponent } from './components/create-letter-modal/create-letter-modal.component';
+import { VisualEditorPaneComponent } from './features/letter-editor/components/visual-editor-pane/visual-editor-pane.component';
 import { LetterEditorStore } from './features/letter-editor/state/letter-editor.store';
 import { LetterCatalogService } from './features/letter-editor/state/letter-catalog.service';
-
-/**
- * Forma mínima del store interno de @florianrauscha/ngx-jrxml-editor que este componente
- * necesita para seleccionar elementos y editar su contenido desde el modal de texto. No es
- * parte de la API pública documentada de la librería — puede cambiar o desaparecer en
- * cualquier actualización sin que sea un breaking change desde su punto de vista. Se accede a
- * él únicamente a través de AppComponent.getEditorStore(), de forma que una futura ruptura
- * solo obligue a tocar ese único método en vez de los puntos dispersos donde se use.
- */
-interface JasperEditorInternalStore {
-  stopEditing(): void;
-  selectedElement(): { kind: string; text?: string; expression?: string } | null | undefined;
-  selections(): unknown[] | undefined;
-  select(path: unknown): void;
-  updateSelected(updater: (el: any) => any): void;
-}
 
 /**
  * AppComponent es la "shell" de la aplicación: compone los paneles/modales y delega el estado
@@ -43,8 +16,9 @@ interface JasperEditorInternalStore {
  * cartas a LetterCatalogService. Conserva directamente solo lo que es inherentemente de nivel
  * de shell: atajos de teclado globales, el guard de navegación ante cambios sin guardar (que
  * coordina entre "cambiar de carta" y "crear carta nueva"), el wiring del modal de crear
- * carta, el modo de vista/pestañas, y el subsistema de doble-click para editar texto (que
- * depende del ViewChild hacia el editor visual de terceros).
+ * carta, y el modo de vista/pestañas. El subsistema de doble-click para editar texto (que
+ * depende del ViewChild hacia el editor visual de terceros) vive en VisualEditorPaneComponent,
+ * no acá.
  *
  * Las señales de LetterEditorStore/LetterCatalogService se re-exponen bajo el mismo nombre de
  * propiedad (ej. `readonly jrxml = this.letterEditor.jrxml`) para que el template siga
@@ -53,31 +27,15 @@ interface JasperEditorInternalStore {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, JasperEditorComponent, XmlCodeEditorComponent, CreateLetterModalComponent],
+  imports: [CommonModule, FormsModule, XmlCodeEditorComponent, CreateLetterModalComponent, VisualEditorPaneComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AppComponent implements OnInit, OnDestroy {
-  @ViewChild('editorComp') editorComp?: JasperEditorComponent;
-  @ViewChild('modalTextarea') modalTextareaRef?: ElementRef<HTMLTextAreaElement>;
-  @ViewChild('backdropRef') backdropRef?: ElementRef<HTMLDivElement>;
-
+export class AppComponent implements OnInit {
   private readonly letterEditor = inject(LetterEditorStore);
   private readonly catalog = inject(LetterCatalogService);
 
-  // Estado del modal de edición de texto
-  readonly textModalOpen = signal<boolean>(false);
-  readonly textModalKind = signal<'staticText' | 'textField'>('staticText');
-  readonly textModalContent = signal<string>('');
-  readonly textModalOriginalContent = signal<string>('');
-
-  // Selector de idioma del corrector ortográfico
-  readonly spellcheckLang = signal<'es' | 'en' | 'off'>('es');
-  readonly spellErrors = signal<SpellError[]>([]);
-  readonly backdropHtml = signal<string>('');
-
-  readonly spellcheckService = inject(SpellcheckService);
   readonly i18n = inject(I18nService);
   readonly currentLang = this.i18n.currentLang;
 
@@ -175,15 +133,6 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.checkHealth();
     this.loadAvailableLetters();
-    if (typeof document !== 'undefined') {
-      document.addEventListener('dblclick', this.handleDocumentDblClick, true);
-    }
-  }
-
-  ngOnDestroy(): void {
-    if (typeof document !== 'undefined') {
-      document.removeEventListener('dblclick', this.handleDocumentDblClick, true);
-    }
   }
 
   // ---------- Delegados a LetterCatalogService ----------
@@ -481,249 +430,5 @@ export class AppComponent implements OnInit, OnDestroy {
 
   setLetterFormat(format: 'JR6' | 'JR7'): void {
     this.letterFormat.set(format);
-  }
-
-  // ==========================================================================
-  // Manejo de Doble Click en Elementos de Texto y Modal de Edición
-  // ==========================================================================
-
-  private activeEditingPath: any = null;
-
-  /** Único punto de acceso al store interno no documentado del editor visual (ver F-4). */
-  private getEditorStore(): JasperEditorInternalStore | undefined {
-    return (this.editorComp as unknown as { store?: JasperEditorInternalStore } | undefined)?.store;
-  }
-
-  private handleDocumentDblClick = (event: MouseEvent): void => {
-    // Solo interceptar en la pestaña del Diseñador Visual
-    if (this.leftTab() !== 'editor') return;
-
-    const target = event.target as HTMLElement | null;
-    if (!target) return;
-
-    // Detectar si se hizo doble click sobre un elemento de texto o campo de expresión
-    const textEl = target.closest(
-      'jasper-static-text-element, jasper-text-field-element, .je-static-text, .je-text-field'
-    ) as HTMLElement | null;
-    if (!textEl) return;
-
-    // Prevenir el editor inline nativo en miniatura
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-
-    const store = this.getEditorStore();
-    if (store) {
-      store.stopEditing();
-
-      // Si por alguna razón el elemento no estaba seleccionado, seleccionarlo
-      if (!store.selectedElement()) {
-        textEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-      }
-
-      const openFromElement = () => {
-        this.activeEditingPath = store.selections()?.[0] ?? null;
-        const el = store.selectedElement();
-        if (el && (el.kind === 'staticText' || el.kind === 'textField')) {
-          this.openTextModal(
-            el.kind,
-            el.kind === 'staticText' ? (el.text ?? '') : (el.expression ?? '')
-          );
-        } else {
-          // Fallback en caso de que el elemento aún no se haya reflejado en el store
-          const isStatic =
-            textEl.tagName.toLowerCase() === 'jasper-static-text-element' ||
-            textEl.classList.contains('je-static-text');
-          const kind: 'staticText' | 'textField' = isStatic ? 'staticText' : 'textField';
-          const content = textEl.innerText || textEl.textContent || '';
-          this.openTextModal(kind, content.trim());
-        }
-      };
-
-      const selected = store.selectedElement();
-      if (selected && (selected.kind === 'staticText' || selected.kind === 'textField')) {
-        openFromElement();
-      } else {
-        setTimeout(openFromElement, 40);
-      }
-    }
-  };
-
-  openTextModal(kind: 'staticText' | 'textField', content: string): void {
-    this.textModalKind.set(kind);
-    this.textModalContent.set(content);
-    this.textModalOriginalContent.set(content);
-
-    // Ajustar idioma del corrector al idioma actual de la aplicación si no está desactivado
-    if (this.spellcheckLang() !== 'off') {
-      this.spellcheckLang.set(this.i18n.currentLang() === 'en' ? 'en' : 'es');
-    }
-
-    this.textModalOpen.set(true);
-
-    // Ensure Hunspell dictionaries are loaded then update spellcheck
-    this.spellcheckService.init().then(() => {
-      this.updateSpellcheck();
-      this.syncScrollAndWidth();
-    });
-
-    setTimeout(() => {
-      if (this.modalTextareaRef?.nativeElement) {
-        const textarea = this.modalTextareaRef.nativeElement;
-        textarea.focus();
-        textarea.setSelectionRange(0, 0);
-        textarea.scrollTop = 0;
-        this.syncScrollAndWidth();
-      }
-      this.updateSpellcheck();
-    }, 60);
-  }
-
-  setSpellcheckLang(lang: 'es' | 'en' | 'off'): void {
-    this.spellcheckLang.set(lang);
-    this.updateSpellcheck();
-    this.syncScrollAndWidth();
-    setTimeout(() => {
-      this.modalTextareaRef?.nativeElement?.focus();
-    }, 0);
-  }
-
-  onTextModalInput(val: string): void {
-    this.textModalContent.set(val);
-    this.updateSpellcheck();
-    this.syncScrollAndWidth();
-  }
-
-  onTextareaScroll(): void {
-    if (this.backdropRef?.nativeElement && this.modalTextareaRef?.nativeElement) {
-      this.backdropRef.nativeElement.scrollTop = this.modalTextareaRef.nativeElement.scrollTop;
-      this.backdropRef.nativeElement.scrollLeft = this.modalTextareaRef.nativeElement.scrollLeft;
-    }
-  }
-
-  syncScrollAndWidth(): void {
-    if (this.backdropRef?.nativeElement && this.modalTextareaRef?.nativeElement) {
-      const textarea = this.modalTextareaRef.nativeElement;
-      const backdrop = this.backdropRef.nativeElement;
-      backdrop.scrollTop = textarea.scrollTop;
-      backdrop.scrollLeft = textarea.scrollLeft;
-      const scrollbarWidth = textarea.offsetWidth - textarea.clientWidth;
-      backdrop.style.paddingRight = `${14 + scrollbarWidth}px`;
-    }
-  }
-
-  updateSpellcheck(): void {
-    const lang = this.spellcheckLang();
-    const text = this.textModalContent();
-    const isExpr = this.textModalKind() === 'textField';
-
-    if (lang === 'off' || !text) {
-      this.spellErrors.set([]);
-      this.backdropHtml.set(this.escapeHtml(text));
-      return;
-    }
-
-    const errors = this.spellcheckService.checkText(text, lang, isExpr);
-    this.spellErrors.set(errors);
-    this.backdropHtml.set(this.buildBackdropHtml(text, errors));
-  }
-
-  buildBackdropHtml(text: string, errors: SpellError[]): string {
-    if (!text) return '&nbsp;';
-    if (!errors || errors.length === 0) return this.escapeHtml(text);
-
-    const sorted = [...errors].sort((a, b) => a.startIndex - b.startIndex);
-    let html = '';
-    let lastIdx = 0;
-
-    for (const err of sorted) {
-      if (err.startIndex > lastIdx) {
-        html += this.escapeHtml(text.substring(lastIdx, err.startIndex));
-      }
-      const word = text.substring(err.startIndex, err.endIndex);
-      html += `<mark class="spell-error-mark">${this.escapeHtml(word)}</mark>`;
-      lastIdx = err.endIndex;
-    }
-    if (lastIdx < text.length) {
-      html += this.escapeHtml(text.substring(lastIdx));
-    }
-    return html;
-  }
-
-  escapeHtml(str: string): string {
-    if (!str) return '';
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-
-  closeTextModal(): void {
-    this.textModalOpen.set(false);
-    const store = this.getEditorStore();
-    if (store) {
-      store.stopEditing();
-    }
-  }
-
-  saveTextModal(): void {
-    const store = this.getEditorStore();
-    const kind = this.textModalKind();
-    const newContent = this.modalTextareaRef?.nativeElement?.value ?? this.textModalContent();
-    this.textModalContent.set(newContent);
-
-    if (store) {
-      const currentSelections = store.selections();
-      if (this.activeEditingPath && (!currentSelections || currentSelections.length === 0)) {
-        store.select(this.activeEditingPath);
-      }
-
-      if (kind === 'staticText') {
-        store.updateSelected((el: any) => ({
-          ...el,
-          text: newContent
-        }));
-      } else if (kind === 'textField') {
-        store.updateSelected((el: any) => ({
-          ...el,
-          expression: newContent
-        }));
-      }
-    }
-
-    this.closeTextModal();
-  }
-
-  onModalKeyDown(event: KeyboardEvent): void {
-    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-      event.preventDefault();
-      this.saveTextModal();
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      this.closeTextModal();
-    }
-  }
-
-  insertIntoExpression(snippet: string): void {
-    const textarea = this.modalTextareaRef?.nativeElement;
-    if (textarea) {
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const val = textarea.value;
-      const next = val.substring(0, start) + snippet + val.substring(end);
-      this.textModalContent.set(next);
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start + snippet.length, start + snippet.length);
-      }, 0);
-    } else {
-      this.textModalContent.set(this.textModalContent() + snippet);
-    }
-  }
-
-  getLineCount(text: string): number {
-    return text ? text.split('\n').length : 1;
   }
 }

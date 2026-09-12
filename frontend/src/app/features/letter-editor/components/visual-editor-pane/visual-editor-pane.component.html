@@ -1,0 +1,15 @@
+<div class="editor-host">
+  <lib-jasper-editor
+    #editorComp
+    [jrxml]="jrxml"
+    (jrxmlChange)="onJrxmlChange($event)"
+  />
+</div>
+
+<app-text-edit-modal
+  [open]="textModalOpen()"
+  [kind]="textModalKind()"
+  [content]="textModalContent()"
+  (save)="handleTextModalSave($event)"
+  (cancel)="closeTextModal()"
+/>

@@ -1,0 +1,27 @@
+/* El host del componente ocupa el lugar que antes tenía el div .editor-host directamente
+   dentro de .editor-pane (que es un flex container) — sin esto, el elemento personalizado
+   <app-visual-editor-pane> sería "display: inline" por defecto y rompería ese layout. */
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+/* Contenedor del Editor Visual (idéntico al original dentro del host) */
+.editor-host {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: #FAFAFB;
+  display: flex;
+  flex-direction: column;
+}
+
+lib-jasper-editor {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+}

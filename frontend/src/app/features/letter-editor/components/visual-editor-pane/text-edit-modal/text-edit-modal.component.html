@@ -1,0 +1,155 @@
+@if (open) {
+  <div class="modal-backdrop" (click)="cancel.emit()" (keydown.escape)="cancel.emit()">
+    <div class="text-editor-modal" (click)="$event.stopPropagation()">
+      <!-- Encabezado del Modal -->
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div
+            class="modal-icon-badge"
+            [class.badge-static]="kind === 'staticText'"
+            [class.badge-expr]="kind === 'textField'"
+          >
+            @if (kind === 'staticText') {
+              <span class="type-icon">T</span>
+            } @else {
+              <span class="type-icon">fx</span>
+            }
+          </div>
+          <div>
+            <h3 class="modal-title">
+              {{ kind === 'staticText' ? t('modal.editTextTitle') : t('modal.editExprTitle') }}
+            </h3>
+            <span class="modal-subtitle">
+              {{ kind === 'staticText' ? t('modal.staticTextDesc') : t('modal.textFieldDesc') }}
+            </span>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="cancel.emit()" title="Cerrar (Esc)">×</button>
+      </div>
+
+      <!-- Cuerpo del Modal -->
+      <div class="modal-body">
+        @if (kind === 'textField') {
+          <!-- Accesos rápidos para expresiones -->
+          <div class="quick-inserts">
+            <span class="quick-insert-label">{{ t('modal.quickInsert') }}</span>
+            <button type="button" class="insert-pill" (click)="insertIntoExpression('$F{')">+ Campo ($F&#123;&#125;)</button>
+            <button type="button" class="insert-pill" (click)="insertIntoExpression('$P{')">+ Parámetro ($P&#123;&#125;)</button>
+            <button type="button" class="insert-pill" (click)="insertIntoExpression('$V{')">+ Variable ($V&#123;&#125;)</button>
+            <button type="button" class="insert-pill" (click)="insertIntoExpression('&quot; + &quot;\\n&quot; + &quot;')">+ Salto (\n)</button>
+          </div>
+        }
+
+        <!-- Barra del Corrector Ortográfico con Selector de Idioma -->
+        <div class="spellcheck-bar">
+          <div class="spellcheck-lang-picker">
+            <span class="spellcheck-icon" [title]="t('modal.correctorLabel')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                <line x1="9" y1="7" x2="15" y2="7"></line>
+                <line x1="9" y1="11" x2="13" y2="11"></line>
+              </svg>
+            </span>
+            <span class="spellcheck-label">{{ t('modal.correctorLabel') }}:</span>
+            <div class="spell-lang-segmented">
+              <button
+                type="button"
+                class="spell-lang-btn"
+                [class.active]="spellcheckLang() === 'es'"
+                (click)="setSpellcheckLang('es')"
+                [title]="t('modal.spellcheckEs')"
+              >
+                🇪🇸 {{ t('modal.spellcheckEs') }}
+              </button>
+              <button
+                type="button"
+                class="spell-lang-btn"
+                [class.active]="spellcheckLang() === 'en'"
+                (click)="setSpellcheckLang('en')"
+                [title]="t('modal.spellcheckEn')"
+              >
+                🇬🇧 {{ t('modal.spellcheckEn') }}
+              </button>
+              <button
+                type="button"
+                class="spell-lang-btn btn-off"
+                [class.active]="spellcheckLang() === 'off'"
+                (click)="setSpellcheckLang('off')"
+                [title]="t('modal.spellcheckOffTooltip')"
+              >
+                ⊘ {{ t('modal.spellcheckOff') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Indicador de estado del corrector -->
+          <div class="spellcheck-status">
+            @if (spellcheckLang() !== 'off') {
+              @if (spellErrors().length === 0) {
+                <span class="spell-badge spell-badge-ok">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>{{ t('modal.noSpellingErrors') }}</span>
+                </span>
+              } @else {
+                <span class="spell-badge spell-badge-warn">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                  <span>{{ spellErrors().length }} {{ spellErrors().length === 1 ? t('modal.errorFound') : t('modal.errorsFound') }}</span>
+                </span>
+              }
+            } @else {
+              <span class="spell-badge spell-badge-off">
+                <span>{{ t('modal.spellcheckDisabled') }}</span>
+              </span>
+            }
+          </div>
+        </div>
+
+        <div class="textarea-container">
+          <!-- Fondo de subrayado sincronizado (solo la línea roja ondulada, sin fondo rojo) -->
+          <div #backdropRef class="textarea-backdrop" [class.code-font]="kind === 'textField'">
+            <div class="backdrop-content" [innerHTML]="backdropHtml()"></div>
+          </div>
+
+          <textarea
+            #modalTextarea
+            class="modal-textarea"
+            [class.code-font]="kind === 'textField'"
+            [value]="editedContent()"
+            (input)="onInput(modalTextarea.value)"
+            (scroll)="onTextareaScroll()"
+            (keydown)="onKeyDown($event)"
+            rows="12"
+            [placeholder]="t('modal.placeholder')"
+          ></textarea>
+        </div>
+
+        <div class="modal-stats">
+          <span class="stat-item">{{ getLineCount(editedContent()) }} {{ t('modal.lines') }}</span>
+          <span class="stat-divider">•</span>
+          <span class="stat-item">{{ editedContent().length }} {{ t('modal.chars') }}</span>
+          <span class="stat-tip">{{ t('modal.helperTip') }}</span>
+        </div>
+      </div>
+
+      <!-- Pie del Modal -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancel.emit()">
+          {{ t('modal.cancel') }}
+        </button>
+        <button type="button" class="btn btn-primary" (click)="saveClick()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>{{ t('modal.apply') }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+}
