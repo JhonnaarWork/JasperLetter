@@ -7,6 +7,9 @@ import { XmlDataAdapterModel } from './models/data-adapter.model';
 import { XmlCodeEditorComponent } from './components/xml-code-editor/xml-code-editor.component';
 import { CreateLetterModalComponent } from './components/create-letter-modal/create-letter-modal.component';
 import { VisualEditorPaneComponent } from './features/letter-editor/components/visual-editor-pane/visual-editor-pane.component';
+import { TestResultModalComponent } from './features/letter-editor/components/modals/test-result-modal/test-result-modal.component';
+import { SaveConfirmModalComponent } from './features/letter-editor/components/modals/save-confirm-modal/save-confirm-modal.component';
+import { UnsavedChangesModalComponent } from './features/letter-editor/components/modals/unsaved-changes-modal/unsaved-changes-modal.component';
 import { LetterEditorStore } from './features/letter-editor/state/letter-editor.store';
 import { LetterCatalogService } from './features/letter-editor/state/letter-catalog.service';
 
@@ -27,7 +30,16 @@ import { LetterCatalogService } from './features/letter-editor/state/letter-cata
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, XmlCodeEditorComponent, CreateLetterModalComponent, VisualEditorPaneComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    XmlCodeEditorComponent,
+    CreateLetterModalComponent,
+    VisualEditorPaneComponent,
+    TestResultModalComponent,
+    SaveConfirmModalComponent,
+    UnsavedChangesModalComponent
+  ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush

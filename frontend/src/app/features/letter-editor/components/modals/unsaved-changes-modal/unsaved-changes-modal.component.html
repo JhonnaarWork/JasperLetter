@@ -1,0 +1,54 @@
+@if (open) {
+  <div class="da-modal-overlay">
+    <div class="da-modal-dialog unsaved-dialog" (click)="$event.stopPropagation()">
+      <div class="da-modal-header warning">
+        <div class="da-modal-header-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <div class="da-modal-header-title">
+          <h3>{{ t('modal.unsavedTitle') }}</h3>
+          <span class="modal-dialog-subtitle">{{ t('modal.unsavedDesc') }}</span>
+        </div>
+      </div>
+
+      <div class="da-modal-body">
+        <ul class="unsaved-items-summary">
+          @if (jrxmlDirty) {
+            <li>
+              <span class="dirty-bullet">●</span>
+              <strong>Plantilla JRXML</strong> ({{ letterId }}.jrxml)
+            </li>
+          }
+          @if (dataAdapterDirty) {
+            <li>
+              <span class="dirty-bullet">●</span>
+              <strong>Data Adapter</strong> (xmlDataAdapter.xml)
+            </li>
+          }
+          @if (xmlDataDirty) {
+            <li>
+              <span class="dirty-bullet">●</span>
+              <strong>Datos XML</strong> ({{ xmlDataLocation || 'datos de cliente' }})
+            </li>
+          }
+        </ul>
+      </div>
+
+      <div class="da-modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="resolve.emit('cancel')">
+          {{ t('modal.unsavedCancelBtn') }}
+        </button>
+        <button type="button" class="btn btn-danger-outline" (click)="resolve.emit('discard')">
+          {{ t('modal.unsavedDiscardBtn') }}
+        </button>
+        <button type="button" class="btn btn-primary" (click)="resolve.emit('save')">
+          {{ t('modal.unsavedSaveBtn') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

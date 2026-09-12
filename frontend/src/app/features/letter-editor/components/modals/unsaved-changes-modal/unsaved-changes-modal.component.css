@@ -1,0 +1,35 @@
+/* Los estilos base (.da-modal-*, .btn*, .modal-dialog-subtitle) viven en styles.css a nivel
+   global. Acá solo lo específico de este modal. */
+
+.unsaved-items-summary {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: #334155;
+}
+
+.dirty-bullet {
+  color: #EA580C;
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+.btn-danger-outline {
+  background: transparent;
+  border: 1px solid #FCA5A5;
+  color: #DC2626;
+  padding: 6px 14px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-danger-outline:hover {
+  background: #FEE2E2;
+  border-color: #F87171;
+}

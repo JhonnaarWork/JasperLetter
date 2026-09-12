@@ -1,0 +1,102 @@
+@if (open) {
+  <div class="da-modal-overlay" (click)="close.emit()">
+    <div class="da-modal-dialog" (click)="$event.stopPropagation()">
+      <!-- Encabezado del Modal -->
+      <div class="da-modal-header" [class.success]="result?.success" [class.error]="!result?.success">
+        <div class="da-modal-header-icon">
+          @if (result?.success) {
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          } @else {
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+          }
+        </div>
+        <div class="da-modal-header-title">
+          <h3>{{ t('da.testModalTitle') }}</h3>
+          <span class="da-modal-badge" [class.badge-success]="result?.success" [class.badge-error]="!result?.success">
+            {{ result?.success ? t('da.testSuccessBadge') : t('da.testErrorBadge') }}
+          </span>
+        </div>
+        <button type="button" class="da-modal-close-btn" (click)="close.emit()">×</button>
+      </div>
+
+      <!-- Cuerpo del Modal -->
+      <div class="da-modal-body">
+        <div class="da-modal-message-box" [class.box-success]="result?.success" [class.box-error]="!result?.success">
+          <p>{{ result?.message }}</p>
+        </div>
+
+        <!-- Tabla de Parámetros Verificados -->
+        <div class="da-test-table">
+          <div class="da-test-row">
+            <span class="da-test-label">{{ t('da.testParamAdapterName') }}:</span>
+            <span class="da-test-val"><code>{{ result?.adapterName || '-' }}</code></span>
+          </div>
+
+          <div class="da-test-row">
+            <span class="da-test-label">{{ t('da.testParamLocation') }}:</span>
+            <span class="da-test-val"><code>{{ result?.location || '-' }}</code></span>
+          </div>
+
+          <div class="da-test-row">
+            <span class="da-test-label">{{ t('da.testParamFileStatus') }}:</span>
+            <span class="da-test-val">
+              @if (result?.fileExists) {
+                <span class="tag-status-ok">✓ {{ t('da.testFileFound') }}</span>
+                @if (result?.fileSizeBytes) {
+                  <span class="tag-meta">({{ result!.fileSizeBytes }} bytes)</span>
+                }
+              } @else {
+                <span class="tag-status-err">✗ {{ t('da.testFileNotFound') }}</span>
+              }
+            </span>
+          </div>
+
+          @if (result?.fileExists) {
+            <div class="da-test-row">
+              <span class="da-test-label">{{ t('da.testParamXmlSyntax') }}:</span>
+              <span class="da-test-val">
+                @if (result?.xmlValid) {
+                  <span class="tag-status-ok">✓ {{ t('da.testXmlValid') }}</span>
+                  @if (result?.rootElement) {
+                    <span class="tag-meta">(Raíz: &lt;{{ result?.rootElement }}&gt;)</span>
+                  }
+                } @else {
+                  <span class="tag-status-err">✗ {{ t('da.testXmlInvalid') }}</span>
+                }
+              </span>
+            </div>
+
+            @if (result?.selectExpression) {
+              <div class="da-test-row">
+                <span class="da-test-label">{{ t('da.testParamXpath') }}:</span>
+                <span class="da-test-val">
+                  <code>{{ result?.selectExpression }}</code>
+                  <span class="tag-meta">({{ t('da.testParamXpathMatches', result?.xpathMatches ?? 0) }})</span>
+                </span>
+              </div>
+            }
+
+            <div class="da-test-row">
+              <span class="da-test-label">{{ t('da.testParamLocaleTz') }}:</span>
+              <span class="da-test-val">{{ result?.locale }} • {{ result?.timeZone }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Pie del Modal -->
+      <div class="da-modal-footer">
+        <button type="button" class="btn btn-primary da-modal-ok-btn" (click)="close.emit()">
+          {{ t('da.testClose') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

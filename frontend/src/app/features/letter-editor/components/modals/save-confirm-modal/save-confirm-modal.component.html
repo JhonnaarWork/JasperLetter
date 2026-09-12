@@ -1,0 +1,112 @@
+@if (open) {
+  <div class="da-modal-overlay" (click)="close.emit()">
+    <div class="da-modal-dialog save-confirm-dialog" (click)="$event.stopPropagation()">
+      <div class="da-modal-header">
+        <div class="da-modal-header-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F5B9E" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+        </div>
+        <div class="da-modal-header-title">
+          <h3>{{ t('modal.saveConfirmTitle') }}</h3>
+          <span class="modal-dialog-subtitle">{{ t('modal.saveConfirmDesc') }}</span>
+        </div>
+        <button type="button" class="da-modal-close-btn" (click)="close.emit()">×</button>
+      </div>
+
+      <div class="da-modal-body">
+        <div class="save-targets-list">
+          <!-- Item 1: Plantilla JRXML -->
+          <label class="save-target-item" [class.is-dirty]="jrxmlDirty">
+            <div class="target-check">
+              <input
+                type="checkbox"
+                [checked]="selectJrxml"
+                (change)="selectJrxmlChange.emit(!selectJrxml)"
+              />
+            </div>
+            <div class="target-info">
+              <div class="target-header">
+                <strong>Plantilla JRXML</strong>
+                @if (jrxmlDirty) {
+                  <span class="badge-target-dirty">● {{ t('modal.statusModified') }}</span>
+                } @else {
+                  <span class="badge-target-clean">{{ t('modal.statusUnchanged') }}</span>
+                }
+              </div>
+              <span class="target-path">resources/reports/{{ letterId }}/{{ letterId }}.jrxml</span>
+            </div>
+          </label>
+
+          <!-- Item 2: Data Adapter -->
+          <label class="save-target-item" [class.is-dirty]="dataAdapterDirty">
+            <div class="target-check">
+              <input
+                type="checkbox"
+                [checked]="selectDataAdapter"
+                (change)="selectDataAdapterChange.emit(!selectDataAdapter)"
+              />
+            </div>
+            <div class="target-info">
+              <div class="target-header">
+                <strong>Data Adapter XML</strong>
+                @if (dataAdapterDirty) {
+                  <span class="badge-target-dirty">● {{ t('modal.statusModified') }}</span>
+                } @else {
+                  <span class="badge-target-clean">{{ t('modal.statusUnchanged') }}</span>
+                }
+              </div>
+              <span class="target-path">resources/reports/{{ letterId }}/xmlDataAdapter.xml</span>
+            </div>
+          </label>
+
+          <!-- Item 3: Datos XML -->
+          <label class="save-target-item" [class.is-dirty]="xmlDataDirty">
+            <div class="target-check">
+              <input
+                type="checkbox"
+                [checked]="selectXmlData"
+                (change)="selectXmlDataChange.emit(!selectXmlData)"
+              />
+            </div>
+            <div class="target-info">
+              <div class="target-header">
+                <strong>Datos XML del Cliente</strong>
+                @if (xmlDataDirty) {
+                  <span class="badge-target-dirty">● {{ t('modal.statusModified') }}</span>
+                } @else {
+                  <span class="badge-target-clean">{{ t('modal.statusUnchanged') }}</span>
+                }
+              </div>
+              <span class="target-path">{{ xmlDataLocation || ('resources/data/xml/' + letterId + '.xml') }}</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="da-modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="close.emit()">
+          {{ t('modal.cancel') }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="saving || (!selectJrxml && !selectDataAdapter && !selectXmlData)"
+          (click)="confirm.emit()"
+        >
+          @if (saving) {
+            <span class="spinner-inline"></span>
+            <span>Guardando...</span>
+          } @else {
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>{{ t('modal.saveConfirmBtn') }}</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

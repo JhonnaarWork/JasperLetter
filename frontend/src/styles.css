@@ -484,3 +484,11 @@ lib-jasper-toolbar .zoom + .sep {
   cursor: pointer;
 }
 
+.modal-dialog-subtitle {
+  font-size: 12px;
+  color: #64748B;
+  display: block;
+  margin-top: 2px;
+  font-weight: 400;
+}
+

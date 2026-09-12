@@ -970,106 +970,7 @@
 
   <!-- Modal de Resultado de Test de Data Adapter -->
   @if (testResultModalOpen()) {
-    <div class="da-modal-overlay" (click)="closeTestModal()">
-      <div class="da-modal-dialog" (click)="$event.stopPropagation()">
-        <!-- Encabezado del Modal -->
-        <div class="da-modal-header" [class.success]="testResult()?.success" [class.error]="!testResult()?.success">
-          <div class="da-modal-header-icon">
-            @if (testResult()?.success) {
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-            } @else {
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.5">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="15" y1="9" x2="9" y2="15"></line>
-                <line x1="9" y1="9" x2="15" y2="15"></line>
-              </svg>
-            }
-          </div>
-          <div class="da-modal-header-title">
-            <h3>{{ t('da.testModalTitle') }}</h3>
-            <span class="da-modal-badge" [class.badge-success]="testResult()?.success" [class.badge-error]="!testResult()?.success">
-              {{ testResult()?.success ? t('da.testSuccessBadge') : t('da.testErrorBadge') }}
-            </span>
-          </div>
-          <button type="button" class="da-modal-close-btn" (click)="closeTestModal()">×</button>
-        </div>
-
-        <!-- Cuerpo del Modal -->
-        <div class="da-modal-body">
-          <div class="da-modal-message-box" [class.box-success]="testResult()?.success" [class.box-error]="!testResult()?.success">
-            <p>{{ testResult()?.message }}</p>
-          </div>
-
-          <!-- Tabla de Parámetros Verificados -->
-          <div class="da-test-table">
-            <div class="da-test-row">
-              <span class="da-test-label">{{ t('da.testParamAdapterName') }}:</span>
-              <span class="da-test-val"><code>{{ testResult()?.adapterName || '-' }}</code></span>
-            </div>
-
-            <div class="da-test-row">
-              <span class="da-test-label">{{ t('da.testParamLocation') }}:</span>
-              <span class="da-test-val"><code>{{ testResult()?.location || '-' }}</code></span>
-            </div>
-
-            <div class="da-test-row">
-              <span class="da-test-label">{{ t('da.testParamFileStatus') }}:</span>
-              <span class="da-test-val">
-                @if (testResult()?.fileExists) {
-                  <span class="tag-status-ok">✓ {{ t('da.testFileFound') }}</span>
-                  @if (testResult()?.fileSizeBytes) {
-                    <span class="tag-meta">({{ testResult()!.fileSizeBytes }} bytes)</span>
-                  }
-                } @else {
-                  <span class="tag-status-err">✗ {{ t('da.testFileNotFound') }}</span>
-                }
-              </span>
-            </div>
-
-            @if (testResult()?.fileExists) {
-              <div class="da-test-row">
-                <span class="da-test-label">{{ t('da.testParamXmlSyntax') }}:</span>
-                <span class="da-test-val">
-                  @if (testResult()?.xmlValid) {
-                    <span class="tag-status-ok">✓ {{ t('da.testXmlValid') }}</span>
-                    @if (testResult()?.rootElement) {
-                      <span class="tag-meta">(Raíz: &lt;{{ testResult()?.rootElement }}&gt;)</span>
-                    }
-                  } @else {
-                    <span class="tag-status-err">✗ {{ t('da.testXmlInvalid') }}</span>
-                  }
-                </span>
-              </div>
-
-              @if (testResult()?.selectExpression) {
-                <div class="da-test-row">
-                  <span class="da-test-label">{{ t('da.testParamXpath') }}:</span>
-                  <span class="da-test-val">
-                    <code>{{ testResult()?.selectExpression }}</code>
-                    <span class="tag-meta">({{ t('da.testParamXpathMatches', testResult()?.xpathMatches ?? 0) }})</span>
-                  </span>
-                </div>
-              }
-
-              <div class="da-test-row">
-                <span class="da-test-label">{{ t('da.testParamLocaleTz') }}:</span>
-                <span class="da-test-val">{{ testResult()?.locale }} • {{ testResult()?.timeZone }}</span>
-              </div>
-            }
-          </div>
-        </div>
-
-        <!-- Pie del Modal -->
-        <div class="da-modal-footer">
-          <button type="button" class="btn btn-primary da-modal-ok-btn" (click)="closeTestModal()">
-            {{ t('da.testClose') }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <app-test-result-modal [open]="testResultModalOpen()" [result]="testResult()" (close)="closeTestModal()" />
   }
 
   <!-- ===================================================================== -->
@@ -1096,174 +997,38 @@
   <!-- MODAL 2: CONFIRMAR GUARDADO GRANULAR (CTRL+S / BOTÓN GUARDAR)         -->
   <!-- ===================================================================== -->
   @if (saveConfirmModalOpen()) {
-    <div class="da-modal-overlay" (click)="closeSaveConfirmModal()">
-      <div class="da-modal-dialog save-confirm-dialog" (click)="$event.stopPropagation()">
-        <div class="da-modal-header">
-          <div class="da-modal-header-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F5B9E" stroke-width="2">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-              <polyline points="17 21 17 13 7 13 7 21"></polyline>
-              <polyline points="7 3 7 8 15 8"></polyline>
-            </svg>
-          </div>
-          <div class="da-modal-header-title">
-            <h3>{{ t('modal.saveConfirmTitle') }}</h3>
-            <span class="modal-dialog-subtitle">{{ t('modal.saveConfirmDesc') }}</span>
-          </div>
-          <button type="button" class="da-modal-close-btn" (click)="closeSaveConfirmModal()">×</button>
-        </div>
-
-        <div class="da-modal-body">
-          <div class="save-targets-list">
-            <!-- Item 1: Plantilla JRXML -->
-            <label class="save-target-item" [class.is-dirty]="isJrxmlDirty()">
-              <div class="target-check">
-                <input
-                  type="checkbox"
-                  [checked]="saveSelectJrxml()"
-                  (change)="saveSelectJrxml.set(!saveSelectJrxml())"
-                />
-              </div>
-              <div class="target-info">
-                <div class="target-header">
-                  <strong>Plantilla JRXML</strong>
-                  @if (isJrxmlDirty()) {
-                    <span class="badge-target-dirty">● {{ t('modal.statusModified') }}</span>
-                  } @else {
-                    <span class="badge-target-clean">{{ t('modal.statusUnchanged') }}</span>
-                  }
-                </div>
-                <span class="target-path">resources/reports/{{ selectedLetterId() }}/{{ selectedLetterId() }}.jrxml</span>
-              </div>
-            </label>
-
-            <!-- Item 2: Data Adapter -->
-            <label class="save-target-item" [class.is-dirty]="isDataAdapterDirty()">
-              <div class="target-check">
-                <input
-                  type="checkbox"
-                  [checked]="saveSelectDataAdapter()"
-                  (change)="saveSelectDataAdapter.set(!saveSelectDataAdapter())"
-                />
-              </div>
-              <div class="target-info">
-                <div class="target-header">
-                  <strong>Data Adapter XML</strong>
-                  @if (isDataAdapterDirty()) {
-                    <span class="badge-target-dirty">● {{ t('modal.statusModified') }}</span>
-                  } @else {
-                    <span class="badge-target-clean">{{ t('modal.statusUnchanged') }}</span>
-                  }
-                </div>
-                <span class="target-path">resources/reports/{{ selectedLetterId() }}/xmlDataAdapter.xml</span>
-              </div>
-            </label>
-
-            <!-- Item 3: Datos XML -->
-            <label class="save-target-item" [class.is-dirty]="isXmlDataDirty()">
-              <div class="target-check">
-                <input
-                  type="checkbox"
-                  [checked]="saveSelectXmlData()"
-                  (change)="saveSelectXmlData.set(!saveSelectXmlData())"
-                />
-              </div>
-              <div class="target-info">
-                <div class="target-header">
-                  <strong>Datos XML del Cliente</strong>
-                  @if (isXmlDataDirty()) {
-                    <span class="badge-target-dirty">● {{ t('modal.statusModified') }}</span>
-                  } @else {
-                    <span class="badge-target-clean">{{ t('modal.statusUnchanged') }}</span>
-                  }
-                </div>
-                <span class="target-path">{{ dataAdapterModel().location || ('resources/data/xml/' + selectedLetterId() + '.xml') }}</span>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <div class="da-modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeSaveConfirmModal()">
-            {{ t('modal.cancel') }}
-          </button>
-          <button
-            type="button"
-            class="btn btn-primary"
-            [disabled]="saving() || (!saveSelectJrxml() && !saveSelectDataAdapter() && !saveSelectXmlData())"
-            (click)="confirmGranularSave()"
-          >
-            @if (saving()) {
-              <span class="spinner-inline"></span>
-              <span>Guardando...</span>
-            } @else {
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              <span>{{ t('modal.saveConfirmBtn') }}</span>
-            }
-          </button>
-        </div>
-      </div>
-    </div>
+    <app-save-confirm-modal
+      [open]="saveConfirmModalOpen()"
+      [letterId]="selectedLetterId()"
+      [saving]="saving()"
+      [jrxmlDirty]="isJrxmlDirty()"
+      [dataAdapterDirty]="isDataAdapterDirty()"
+      [xmlDataDirty]="isXmlDataDirty()"
+      [selectJrxml]="saveSelectJrxml()"
+      (selectJrxmlChange)="saveSelectJrxml.set($event)"
+      [selectDataAdapter]="saveSelectDataAdapter()"
+      (selectDataAdapterChange)="saveSelectDataAdapter.set($event)"
+      [selectXmlData]="saveSelectXmlData()"
+      (selectXmlDataChange)="saveSelectXmlData.set($event)"
+      [xmlDataLocation]="dataAdapterModel().location"
+      (confirm)="confirmGranularSave()"
+      (close)="closeSaveConfirmModal()"
+    />
   }
 
   <!-- ===================================================================== -->
   <!-- MODAL 3: CAMBIOS SIN GUARDAR (GUARD DE NAVEGACIÓN)                    -->
   <!-- ===================================================================== -->
   @if (unsavedModalOpen()) {
-    <div class="da-modal-overlay">
-      <div class="da-modal-dialog unsaved-dialog" (click)="$event.stopPropagation()">
-        <div class="da-modal-header warning">
-          <div class="da-modal-header-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" y1="9" x2="12" y2="13"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-          </div>
-          <div class="da-modal-header-title">
-            <h3>{{ t('modal.unsavedTitle') }}</h3>
-            <span class="modal-dialog-subtitle">{{ t('modal.unsavedDesc') }}</span>
-          </div>
-        </div>
-
-        <div class="da-modal-body">
-          <ul class="unsaved-items-summary">
-            @if (isJrxmlDirty()) {
-              <li>
-                <span class="dirty-bullet">●</span>
-                <strong>Plantilla JRXML</strong> ({{ selectedLetterId() }}.jrxml)
-              </li>
-            }
-            @if (isDataAdapterDirty()) {
-              <li>
-                <span class="dirty-bullet">●</span>
-                <strong>Data Adapter</strong> (xmlDataAdapter.xml)
-              </li>
-            }
-            @if (isXmlDataDirty()) {
-              <li>
-                <span class="dirty-bullet">●</span>
-                <strong>Datos XML</strong> ({{ dataAdapterModel().location || 'datos de cliente' }})
-              </li>
-            }
-          </ul>
-        </div>
-
-        <div class="da-modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="resolveUnsavedModal('cancel')">
-            {{ t('modal.unsavedCancelBtn') }}
-          </button>
-          <button type="button" class="btn btn-danger-outline" (click)="resolveUnsavedModal('discard')">
-            {{ t('modal.unsavedDiscardBtn') }}
-          </button>
-          <button type="button" class="btn btn-primary" (click)="resolveUnsavedModal('save')">
-            {{ t('modal.unsavedSaveBtn') }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <app-unsaved-changes-modal
+      [open]="unsavedModalOpen()"
+      [letterId]="selectedLetterId()"
+      [jrxmlDirty]="isJrxmlDirty()"
+      [dataAdapterDirty]="isDataAdapterDirty()"
+      [xmlDataDirty]="isXmlDataDirty()"
+      [xmlDataLocation]="dataAdapterModel().location"
+      (resolve)="resolveUnsavedModal($event)"
+    />
   }
 
   <!-- ===================================================================== -->
