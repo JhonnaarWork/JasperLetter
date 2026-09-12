@@ -175,8 +175,8 @@ class LetterResourceServiceTest {
 
         TestDataAdapterResponse result = service.testDataAdapter("ETIPLET_TEST", adapterXml, null);
 
-        assertTrue(result.isSuccess());
-        assertEquals("content", result.getRootElement());
+        assertTrue(result.success());
+        assertEquals("content", result.rootElement());
     }
 
     @Test
@@ -190,17 +190,17 @@ class LetterResourceServiceTest {
 
         TestDataAdapterResponse result = service.testDataAdapter("ETIPLET_TEST", adapterXml, null);
 
-        assertFalse(result.isSuccess());
-        assertEquals("FILE_NOT_FOUND", result.getStatus());
-        assertNull(result.getXmlContent(), "El contenido de un archivo fuera de resources/ nunca debe llegar en la respuesta");
+        assertFalse(result.success());
+        assertEquals("FILE_NOT_FOUND", result.status());
+        assertNull(result.xmlContent(), "El contenido de un archivo fuera de resources/ nunca debe llegar en la respuesta");
     }
 
     @Test
     void testDataAdapter_malformedXml_reportsInvalidAdapterXml() {
         TestDataAdapterResponse result = service.testDataAdapter("ETIPLET_TEST", "<xmlDataAdapter", null);
 
-        assertFalse(result.isSuccess());
-        assertEquals("INVALID_ADAPTER_XML", result.getStatus());
+        assertFalse(result.success());
+        assertEquals("INVALID_ADAPTER_XML", result.status());
     }
 
     // ---------- excepciones tipadas (A-3) ----------
@@ -219,8 +219,7 @@ class LetterResourceServiceTest {
 
     @Test
     void createLetter_throwsValidationException_whenLetterIdMissing() {
-        CreateLetterRequest req = new CreateLetterRequest();
-        req.setLetterId("   ");
+        CreateLetterRequest req = new CreateLetterRequest("   ", null, null, null, false, false);
 
         assertThrows(ValidationException.class, () -> service.createLetter(req));
     }
@@ -228,8 +227,7 @@ class LetterResourceServiceTest {
     @Test
     void createLetter_throwsValidationException_whenLetterAlreadyExists() throws IOException {
         Files.createDirectories(resourcesDir.resolve("reports/YAEXISTE"));
-        CreateLetterRequest req = new CreateLetterRequest();
-        req.setLetterId("YAEXISTE");
+        CreateLetterRequest req = new CreateLetterRequest("YAEXISTE", null, null, null, false, false);
 
         assertThrows(ValidationException.class, () -> service.createLetter(req));
     }

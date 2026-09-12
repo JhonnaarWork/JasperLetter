@@ -45,10 +45,10 @@ public class ReportPreviewController {
     public ResponseEntity<?> previewReport(@Valid @RequestBody PreviewRequest request) {
         try {
             byte[] pdfContent = jasperReportService.generatePdfPreview(
-                    request.getJrxml(),
-                    request.getParameters(),
-                    request.getLetterId(),
-                    request.getXmlData()
+                    request.jrxml(),
+                    request.parameters(),
+                    request.letterId(),
+                    request.xmlData()
             );
 
             HttpHeaders headers = new HttpHeaders();

@@ -50,6 +50,9 @@ public class LetterResourceService {
      */
     private static final Pattern LETTER_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_-]+$");
 
+    private static final String DEFAULT_LOCALE = "es_ES";
+    private static final String DEFAULT_TIME_ZONE = "America/Montevideo";
+
     // Visibilidad de paquete (no private) para permitir tests unitarios directos sin reflexión.
     boolean isValidLetterId(String letterId) {
         return letterId != null && LETTER_ID_PATTERN.matcher(letterId.trim()).matches();
@@ -124,7 +127,7 @@ public class LetterResourceService {
      */
     public List<LetterResourceInfo> getAvailableLetters() {
         List<LetterResourceInfo> result = new ArrayList<>();
-        File reportsDir = new File(getResourcesDir(), "reports");
+        File reportsDir = new File(getResourcesDir(), RepositoryLayout.REPORTS_DIR);
         if (!reportsDir.exists() || !reportsDir.isDirectory()) {
             log.warn("El directorio de reportes no existe: {}", reportsDir.getAbsolutePath());
             return result;
@@ -148,8 +151,8 @@ public class LetterResourceService {
                 }
             }
 
-            File adapterFile = new File(dir, "xmlDataAdapter.xml");
-            File xmlDataFile = new File(getResourcesDir(), "data/xml/" + letterId + ".xml");
+            File adapterFile = new File(dir, RepositoryLayout.DATA_ADAPTER_FILENAME);
+            File xmlDataFile = new File(getResourcesDir(), RepositoryLayout.dataXmlPath(letterId));
 
             String format = "JR6";
             try {
@@ -161,13 +164,13 @@ public class LetterResourceService {
             result.add(new LetterResourceInfo(
                     letterId,
                     "Carta " + letterId,
-                    "reports/" + letterId,
+                    RepositoryLayout.letterDirPath(letterId),
                     jrxmlFile.getName(),
                     format,
                     adapterFile.exists(),
                     adapterFile.exists() ? adapterFile.getName() : null,
                     xmlDataFile.exists(),
-                    xmlDataFile.exists() ? "data/xml/" + letterId + ".xml" : null
+                    xmlDataFile.exists() ? RepositoryLayout.dataXmlPath(letterId) : null
             ));
         }
 
@@ -186,7 +189,7 @@ public class LetterResourceService {
             // el problema fue el formato del id o que la carta simplemente no existe).
             throw new LetterNotFoundException("Carta no encontrada: " + letterId);
         }
-        File letterDir = new File(getResourcesDir(), "reports/" + letterId);
+        File letterDir = new File(getResourcesDir(), RepositoryLayout.letterDirPath(letterId));
         if (!letterDir.exists() || !letterDir.isDirectory()) {
             throw new LetterNotFoundException("Carta no encontrada: " + letterId);
         }
@@ -206,7 +209,7 @@ public class LetterResourceService {
         String format = JrxmlFormatUtils.detectFormat(jrxmlContent);
 
         // Data Adapter
-        File adapterFile = new File(letterDir, "xmlDataAdapter.xml");
+        File adapterFile = new File(letterDir, RepositoryLayout.DATA_ADAPTER_FILENAME);
         String adapterContent = adapterFile.exists() ? Files.readString(adapterFile.toPath(), StandardCharsets.UTF_8) : null;
 
         // Comprobar si el data adapter está conectado (la ruta declarada debe existir en disco)
@@ -233,7 +236,7 @@ public class LetterResourceService {
             }
         }
         if (xmlDataContent == null) {
-            File fallback = new File(getResourcesDir(), "data/xml/" + letterId + ".xml");
+            File fallback = new File(getResourcesDir(), RepositoryLayout.dataXmlPath(letterId));
             if (fallback.exists() && fallback.isFile()) {
                 try {
                     xmlDataContent = Files.readString(fallback.toPath(), StandardCharsets.UTF_8);
@@ -276,7 +279,7 @@ public class LetterResourceService {
                            String dataAdapter, boolean saveDataAdapter,
                            String requestedFormat) throws IOException {
         letterId = requireValidLetterId(letterId);
-        File letterDir = new File(getResourcesDir(), "reports/" + letterId);
+        File letterDir = new File(getResourcesDir(), RepositoryLayout.letterDirPath(letterId));
         if (!letterDir.exists()) {
             letterDir.mkdirs();
         }
@@ -320,7 +323,7 @@ public class LetterResourceService {
         if (saveXmlData && xmlData != null && !xmlData.trim().isEmpty()) {
             File xmlDataFile = getDataFileForLetter(letterId);
             if (xmlDataFile == null) {
-                File xmlDataDir = new File(getResourcesDir(), "data/xml");
+                File xmlDataDir = new File(getResourcesDir(), RepositoryLayout.DATA_XML_DIR);
                 if (!xmlDataDir.exists()) {
                     xmlDataDir.mkdirs();
                 }
@@ -332,7 +335,7 @@ public class LetterResourceService {
 
         // Guardar Data Adapter si fue provisto y solicitado
         if (saveDataAdapter && dataAdapter != null && !dataAdapter.trim().isEmpty()) {
-            File adapterFile = new File(letterDir, "xmlDataAdapter.xml");
+            File adapterFile = new File(letterDir, RepositoryLayout.DATA_ADAPTER_FILENAME);
             Files.writeString(adapterFile.toPath(), dataAdapter, StandardCharsets.UTF_8);
             log.info("Archivo Data Adapter guardado exitosamente en: {}", adapterFile.getAbsolutePath());
         }
@@ -382,8 +385,8 @@ public class LetterResourceService {
         }
         letterId = letterId.trim();
         File resourcesDir = getResourcesDir();
-        File letterDir = new File(resourcesDir, "reports/" + letterId);
-        File adapterFile = new File(letterDir, "xmlDataAdapter.xml");
+        File letterDir = new File(resourcesDir, RepositoryLayout.letterDirPath(letterId));
+        File adapterFile = new File(letterDir, RepositoryLayout.DATA_ADAPTER_FILENAME);
         if (adapterFile.exists()) {
             try {
                 String adapterContent = Files.readString(adapterFile.toPath(), StandardCharsets.UTF_8);
@@ -399,7 +402,7 @@ public class LetterResourceService {
             }
         }
         // Fallback estándar
-        File fallback = new File(resourcesDir, "data/xml/" + letterId + ".xml");
+        File fallback = new File(resourcesDir, RepositoryLayout.dataXmlPath(letterId));
         if (fallback.exists() && fallback.isFile()) {
             return fallback;
         }
@@ -415,8 +418,8 @@ public class LetterResourceService {
         }
         letterId = letterId.trim();
         File resourcesDir = getResourcesDir();
-        File letterDir = new File(resourcesDir, "reports/" + letterId);
-        File adapterFile = new File(letterDir, "xmlDataAdapter.xml");
+        File letterDir = new File(resourcesDir, RepositoryLayout.letterDirPath(letterId));
+        File adapterFile = new File(letterDir, RepositoryLayout.DATA_ADAPTER_FILENAME);
         if (!adapterFile.exists() || !adapterFile.isFile()) {
             return false;
         }
@@ -520,16 +523,24 @@ public class LetterResourceService {
             dataDoc = dataBuilder.parse(resolvedFile);
         } catch (Exception ex) {
             log.warn("El archivo de datos XML está corrupto o mal formado: {}", ex.getMessage());
-            TestDataAdapterResponse res = TestDataAdapterResponse.error(
+            return new TestDataAdapterResponse(
+                    false,
                     "INVALID_DATA_XML",
                     "El archivo de datos XML está corrupto o tiene errores de sintaxis: " + ex.getMessage(),
+                    null,
                     location,
-                    testedPaths
+                    toCanonicalPath(resolvedFile),
+                    true,
+                    fileSize,
+                    false,
+                    null,
+                    null,
+                    0,
+                    null,
+                    null,
+                    testedPaths,
+                    null
             );
-            res.setFileExists(true);
-            res.setFileSizeBytes(fileSize);
-            res.setResolvedPath(toCanonicalPath(resolvedFile));
-            return res;
         }
 
         String rootElementName = dataDoc.getDocumentElement() != null ? dataDoc.getDocumentElement().getTagName() : "desconocido";
@@ -564,8 +575,8 @@ public class LetterResourceService {
                 rootElementName,
                 selectExpression,
                 xpathMatches,
-                locale != null ? locale : "es_ES",
-                timeZone != null ? timeZone : "America/Montevideo",
+                locale != null ? locale : DEFAULT_LOCALE,
+                timeZone != null ? timeZone : DEFAULT_TIME_ZONE,
                 xmlContent
         );
     }
@@ -574,27 +585,27 @@ public class LetterResourceService {
      * Crea una nueva carta desde cero en resources/reports/{letterId}/
      */
     public LetterDetailResponse createLetter(CreateLetterRequest req) throws IOException {
-        if (req.getLetterId() == null || req.getLetterId().trim().isEmpty()) {
+        if (req.letterId() == null || req.letterId().trim().isEmpty()) {
             throw new ValidationException("El ID de la carta es obligatorio.");
         }
-        String cleanId = req.getLetterId().trim().toUpperCase().replaceAll("[^A-Z0-9_-]", "");
+        String cleanId = req.letterId().trim().toUpperCase().replaceAll("[^A-Z0-9_-]", "");
         if (cleanId.isEmpty()) {
             throw new ValidationException("El ID de la carta contiene caracteres inválidos.");
         }
 
-        File letterDir = new File(getResourcesDir(), "reports/" + cleanId);
+        File letterDir = new File(getResourcesDir(), RepositoryLayout.letterDirPath(cleanId));
         if (letterDir.exists()) {
             throw new ValidationException("Ya existe una carta con el identificador " + cleanId);
         }
         letterDir.mkdirs();
 
-        String format = req.getFormat() != null && "JR7".equalsIgnoreCase(req.getFormat()) ? "JR7" : "JR6";
+        String format = req.format() != null && "JR7".equalsIgnoreCase(req.format()) ? "JR7" : "JR6";
         String jrxmlContent = JrxmlFormatUtils.createDefaultJrxml(cleanId, format);
 
         // Si se solicitó crear Data Adapter
         String adapterContent = null;
-        if (req.isCreateDataAdapter()) {
-            String xmlLocation = "resources\\data\\xml\\" + cleanId + ".xml";
+        if (req.createDataAdapter()) {
+            String xmlLocation = RepositoryLayout.displayDataXmlPath(cleanId + ".xml");
             adapterContent = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                     "<xmlDataAdapter class=\"net.sf.jasperreports.data.xml.XmlDataAdapterImpl\">\n" +
                     "  <name>xmlDataAdapter_" + cleanId + "</name>\n" +
@@ -604,14 +615,14 @@ public class LetterResourceService {
                     "  <useConnection>true</useConnection>\n" +
                     "  <namespaceAware>false</namespaceAware>\n" +
                     "  <selectExpression></selectExpression>\n" +
-                    "  <locale>es_ES</locale>\n" +
-                    "  <timeZone>America/Montevideo</timeZone>\n" +
+                    "  <locale>" + DEFAULT_LOCALE + "</locale>\n" +
+                    "  <timeZone>" + DEFAULT_TIME_ZONE + "</timeZone>\n" +
                     "</xmlDataAdapter>\n";
-            File adapterFile = new File(letterDir, "xmlDataAdapter.xml");
+            File adapterFile = new File(letterDir, RepositoryLayout.DATA_ADAPTER_FILENAME);
             Files.writeString(adapterFile.toPath(), adapterContent, StandardCharsets.UTF_8);
 
             // Inyectar referencia en el JRXML
-            jrxmlContent = JrxmlFormatUtils.injectDataAdapterProperty(jrxmlContent, "xmlDataAdapter.xml");
+            jrxmlContent = JrxmlFormatUtils.injectDataAdapterProperty(jrxmlContent, RepositoryLayout.DATA_ADAPTER_FILENAME);
         }
 
         // Guardar JRXML
@@ -619,8 +630,8 @@ public class LetterResourceService {
         Files.writeString(jrxmlFile.toPath(), jrxmlContent, StandardCharsets.UTF_8);
 
         // Si se solicitó crear Datos XML
-        if (req.isCreateXmlData()) {
-            File xmlDataDir = new File(getResourcesDir(), "data/xml");
+        if (req.createXmlData()) {
+            File xmlDataDir = new File(getResourcesDir(), RepositoryLayout.DATA_XML_DIR);
             if (!xmlDataDir.exists()) {
                 xmlDataDir.mkdirs();
             }
@@ -652,7 +663,7 @@ public class LetterResourceService {
 
         // Copiar un logo estándar si existe en otra carta (ej: ETIPLET002/enersa_4.png)
         try {
-            File sampleLogo = new File(getResourcesDir(), "reports/ETIPLET002/enersa_4.png");
+            File sampleLogo = new File(getResourcesDir(), RepositoryLayout.REPORTS_DIR + "/ETIPLET002/enersa_4.png");
             if (sampleLogo.exists()) {
                 Files.copy(sampleLogo.toPath(), new File(letterDir, "enersa_4.png").toPath());
             }
@@ -667,14 +678,14 @@ public class LetterResourceService {
      */
     public List<DataAdapterOptionInfo> getAvailableDataAdapters() {
         List<DataAdapterOptionInfo> list = new ArrayList<>();
-        File reportsDir = new File(getResourcesDir(), "reports");
+        File reportsDir = new File(getResourcesDir(), RepositoryLayout.REPORTS_DIR);
         if (!reportsDir.exists() || !reportsDir.isDirectory()) return list;
 
         File[] subdirs = reportsDir.listFiles(File::isDirectory);
         if (subdirs == null) return list;
 
         for (File dir : subdirs) {
-            File adapterFile = new File(dir, "xmlDataAdapter.xml");
+            File adapterFile = new File(dir, RepositoryLayout.DATA_ADAPTER_FILENAME);
             if (adapterFile.exists() && adapterFile.isFile()) {
                 String letterId = dir.getName();
                 String location = null;
@@ -685,7 +696,7 @@ public class LetterResourceService {
                 }
                 list.add(new DataAdapterOptionInfo(
                         "Data Adapter " + letterId,
-                        "reports/" + letterId + "/xmlDataAdapter.xml",
+                        RepositoryLayout.letterDirPath(letterId) + "/" + RepositoryLayout.DATA_ADAPTER_FILENAME,
                         letterId,
                         location
                 ));
@@ -699,7 +710,7 @@ public class LetterResourceService {
      */
     public List<DataFileInfo> getAvailableDataXmlFiles() {
         List<DataFileInfo> list = new ArrayList<>();
-        File xmlDir = new File(getResourcesDir(), "data/xml");
+        File xmlDir = new File(getResourcesDir(), RepositoryLayout.DATA_XML_DIR);
         if (!xmlDir.exists() || !xmlDir.isDirectory()) return list;
 
         File[] files = xmlDir.listFiles((d, name) -> name.toLowerCase().endsWith(".xml"));
@@ -708,7 +719,7 @@ public class LetterResourceService {
         for (File f : files) {
             list.add(new DataFileInfo(
                     f.getName(),
-                    "resources\\data\\xml\\" + f.getName(),
+                    RepositoryLayout.displayDataXmlPath(f.getName()),
                     f.length()
             ));
         }
@@ -726,7 +737,7 @@ public class LetterResourceService {
             cleanName += ".xml";
         }
 
-        File xmlDir = new File(getResourcesDir(), "data/xml");
+        File xmlDir = new File(getResourcesDir(), RepositoryLayout.DATA_XML_DIR);
         if (!xmlDir.exists()) {
             xmlDir.mkdirs();
         }
@@ -737,6 +748,6 @@ public class LetterResourceService {
                 : "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<content>\n\t<letterType>" + (letterId != null ? letterId : "DATA") + "</letterType>\n</content>\n";
 
         Files.writeString(xmlFile.toPath(), content, StandardCharsets.UTF_8);
-        return new DataFileInfo(cleanName, "resources\\data\\xml\\" + cleanName, xmlFile.length());
+        return new DataFileInfo(cleanName, RepositoryLayout.displayDataXmlPath(cleanName), xmlFile.length());
     }
 }

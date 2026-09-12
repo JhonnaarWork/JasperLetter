@@ -44,29 +44,29 @@ class EtipletReportIntegrationTest {
         // 1. Listar cartas
         List<LetterResourceInfo> letters = resourceService.getAvailableLetters();
         LetterResourceInfo info = letters.stream()
-                .filter(l -> LETTER_ID.equals(l.getId()))
+                .filter(l -> LETTER_ID.equals(l.id()))
                 .findFirst()
                 .orElse(null);
         assertNotNull(info, "Debería encontrar la carta " + LETTER_ID + " en resources/reports/");
-        assertEquals("JR6", info.getFormat(), "El formato original en disco debe ser JR6");
-        assertTrue(info.isHasDataAdapter());
-        assertTrue(info.isHasXmlData());
+        assertEquals("JR6", info.format(), "El formato original en disco debe ser JR6");
+        assertTrue(info.hasDataAdapter());
+        assertTrue(info.hasXmlData());
 
         // 2. Obtener detalle
         LetterDetailResponse detail = resourceService.getLetterDetail(LETTER_ID);
-        assertNotNull(detail.getJrxml());
-        assertNotNull(detail.getXmlData());
-        assertNotNull(detail.getDataAdapter());
+        assertNotNull(detail.jrxml());
+        assertNotNull(detail.xmlData());
+        assertNotNull(detail.dataAdapter());
 
         JasperReportService reportService = new JasperReportService(resourceService);
 
         // 3. Compilar y llenar desde JR6 tal cual está en disco
-        byte[] pdfBytes = reportService.generatePdfPreview(detail.getJrxml(), null, LETTER_ID, null);
+        byte[] pdfBytes = reportService.generatePdfPreview(detail.jrxml(), null, LETTER_ID, null);
         assertTrue(pdfBytes.length > 1000, "El PDF generado debe tener contenido válido (> 1000 bytes)");
 
         // 4. Con XML de datos personalizado en tiempo real
-        String customXml = detail.getXmlData().replace("JORGE DANIEL GONZALEZ", "JUAN PEREZ MODIFICADO");
-        byte[] customPdfBytes = reportService.generatePdfPreview(detail.getJrxml(), null, LETTER_ID, customXml);
+        String customXml = detail.xmlData().replace("JORGE DANIEL GONZALEZ", "JUAN PEREZ MODIFICADO");
+        byte[] customPdfBytes = reportService.generatePdfPreview(detail.jrxml(), null, LETTER_ID, customXml);
         assertTrue(customPdfBytes.length > 1000);
 
         // 5. Con JRXML en formato JR7 (salida real del editor visual: isForPrompting, <element kind="...">)
@@ -101,12 +101,12 @@ class EtipletReportIntegrationTest {
         LetterResourceService resourceService = new LetterResourceService(new DataFileResolver());
         LetterDetailResponse detail = resourceService.getLetterDetail(LETTER_ID);
 
-        String jr7 = JrxmlFormatUtils.convertToJr7(detail.getJrxml());
+        String jr7 = JrxmlFormatUtils.convertToJr7(detail.jrxml());
         Matcher m = Pattern.compile("<pageHeader[\\s\\S]*?<\\/pageHeader>").matcher(jr7);
         assertTrue(m.find(), "El JRXML normalizado a JR7 debe conservar un <pageHeader>");
 
         JasperReportService reportService = new JasperReportService(resourceService);
-        JasperPrint print = reportService.generateJasperPrint(detail.getJrxml(), null, LETTER_ID, null);
+        JasperPrint print = reportService.generateJasperPrint(detail.jrxml(), null, LETTER_ID, null);
 
         assertFalse(print.getPages().isEmpty(), "El reporte llenado debe producir al menos una página");
         JRPrintPage page = print.getPages().get(0);

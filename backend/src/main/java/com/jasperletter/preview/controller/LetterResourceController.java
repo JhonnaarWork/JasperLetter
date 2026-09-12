@@ -63,19 +63,19 @@ public class LetterResourceController {
      */
     @PostMapping("/letters/{letterId}/save")
     public ResponseEntity<Map<String, Object>> saveLetter(@PathVariable("letterId") String letterId, @RequestBody SaveLetterRequest request) throws IOException {
-        boolean saveJrxml = request.getSaveJrxml() != null ? request.getSaveJrxml() : true;
-        boolean saveDataAdapter = request.getSaveDataAdapter() != null ? request.getSaveDataAdapter() : true;
-        boolean saveXmlData = request.getSaveXmlData() != null ? request.getSaveXmlData() : true;
+        boolean saveJrxml = request.saveJrxml() != null ? request.saveJrxml() : true;
+        boolean saveDataAdapter = request.saveDataAdapter() != null ? request.saveDataAdapter() : true;
+        boolean saveXmlData = request.saveXmlData() != null ? request.saveXmlData() : true;
 
         letterResourceService.saveLetter(
                 letterId,
-                request.getJrxml(),
+                request.jrxml(),
                 saveJrxml,
-                request.getXmlData(),
+                request.xmlData(),
                 saveXmlData,
-                request.getDataAdapter(),
+                request.dataAdapter(),
                 saveDataAdapter,
-                request.getFormat()
+                request.format()
         );
 
         boolean isConnected = letterResourceService.isDataAdapterConnected(letterId);
@@ -143,11 +143,11 @@ public class LetterResourceController {
      */
     @PostMapping("/data-adapter/test")
     public ResponseEntity<TestDataAdapterResponse> testDataAdapter(@RequestBody TestDataAdapterRequest request) {
-        log.info("Probando Data Adapter para carta {}...", request.getLetterId());
+        log.info("Probando Data Adapter para carta {}...", request.letterId());
         TestDataAdapterResponse response = letterResourceService.testDataAdapter(
-                request.getLetterId(),
-                request.getDataAdapterXml(),
-                request.getCustomXmlData()
+                request.letterId(),
+                request.dataAdapterXml(),
+                request.customXmlData()
         );
         return ResponseEntity.ok(response);
     }

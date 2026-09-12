@@ -68,7 +68,7 @@ public class DataFileResolver {
         String relPath = trimmed.replace('\\', '/').replaceAll("^/+", "");
         File workspaceRoot = resourcesDir != null ? resourcesDir.getParentFile() : null;
         File letterDir = (letterId != null && !letterId.trim().isEmpty() && resourcesDir != null)
-                ? new File(resourcesDir, "reports/" + letterId)
+                ? new File(resourcesDir, RepositoryLayout.letterDirPath(letterId))
                 : null;
 
         // A. Relativo a la raíz del workspace (ej: resources/data/xml/ETIPLET002.xml)
