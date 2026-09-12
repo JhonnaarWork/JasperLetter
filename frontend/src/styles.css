@@ -492,6 +492,78 @@ lib-jasper-toolbar .zoom + .sep {
   font-weight: 400;
 }
 
+/* Compartidas entre AppComponent (pestañas izquierdas del editor: .left-tab-group,
+   .left-tab-btn, .pane-header-tabs) y PreviewPaneComponent (pestañas derechas: .tab-group,
+   .tab-btn, .preview-nav-bar) — mismo estilo visual, dos componentes distintos. También las
+   reglas que combinan .app-main (AppComponent) con .preview-pane (PreviewPaneComponent), que
+   cruzan el límite de encapsulación de ambos componentes y por eso no pueden vivir en ninguno
+   de los dos stylesheets scoped. */
+.pane-header-tabs,
+.preview-nav-bar {
+  height: 38px;
+  background: #F0F4F8;
+  border-bottom: 1px solid #D5DCE0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  flex-shrink: 0;
+}
+
+.left-tab-group,
+.tab-group {
+  display: flex;
+  gap: 2px;
+  height: 100%;
+  align-items: flex-end;
+}
+
+.left-tab-btn,
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 33px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  color: #556877;
+  font-family: 'Soho', Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.left-tab-btn:hover,
+.tab-btn:hover {
+  color: #2E6C99;
+  background: #E4ECF2;
+}
+
+.left-tab-btn.active,
+.tab-btn.active {
+  background: #FFFFFF;
+  color: #2E6C99;
+  font-weight: 700;
+  border-color: #D5DCE0;
+  border-top: 2px solid #2E6C99;
+  border-bottom: 1px solid #FFFFFF;
+  margin-bottom: -1px;
+}
+
+.app-main.mode-split .preview-pane {
+  flex: 1;
+}
+
+.app-main.mode-preview .preview-pane {
+  flex: 1;
+  width: 100%;
+}
+
 /* Compartidas entre SelectAdapterModalComponent y SelectXmlDataModalComponent
    (listas de opciones con la misma estructura visual). */
 .adapter-options-list, .xml-options-list {

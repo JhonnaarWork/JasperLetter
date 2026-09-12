@@ -12,6 +12,8 @@ import { SaveConfirmModalComponent } from './features/letter-editor/components/m
 import { UnsavedChangesModalComponent } from './features/letter-editor/components/modals/unsaved-changes-modal/unsaved-changes-modal.component';
 import { SelectAdapterModalComponent } from './features/letter-editor/components/modals/select-adapter-modal/select-adapter-modal.component';
 import { SelectXmlDataModalComponent } from './features/letter-editor/components/modals/select-xml-data-modal/select-xml-data-modal.component';
+import { WelcomeScreenComponent } from './features/letter-editor/components/welcome-screen/welcome-screen.component';
+import { PreviewPaneComponent } from './features/letter-editor/components/preview-pane/preview-pane.component';
 import { LetterEditorStore } from './features/letter-editor/state/letter-editor.store';
 import { LetterCatalogService } from './features/letter-editor/state/letter-catalog.service';
 
@@ -42,7 +44,9 @@ import { LetterCatalogService } from './features/letter-editor/state/letter-cata
     SaveConfirmModalComponent,
     UnsavedChangesModalComponent,
     SelectAdapterModalComponent,
-    SelectXmlDataModalComponent
+    SelectXmlDataModalComponent,
+    WelcomeScreenComponent,
+    PreviewPaneComponent
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],

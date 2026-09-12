@@ -1,0 +1,70 @@
+<div class="params-container">
+  <div class="params-intro">
+    <h3>{{ t('params.title') }}</h3>
+    <p>{{ t('params.description') }}</p>
+  </div>
+
+  <div class="params-list">
+    @for (param of parameterEntries; track param.key) {
+      <div class="param-card">
+        <div class="param-header">
+          <span class="param-name">{{ '$P{' + param.key + '}' }}</span>
+          <button
+            type="button"
+            class="remove-param-btn"
+            (click)="removeParameter.emit(param.key)"
+            [title]="t('params.removeTooltip')"
+          >
+            ×
+          </button>
+        </div>
+
+        @if (param.key === 'CUERPO' || param.value.length > 60) {
+          <textarea
+            class="param-textarea"
+            rows="3"
+            [ngModel]="param.value"
+            (ngModelChange)="parameterChange.emit({ key: param.key, value: $event })"
+          ></textarea>
+        } @else {
+          <input
+            type="text"
+            class="param-input"
+            [ngModel]="param.value"
+            (ngModelChange)="parameterChange.emit({ key: param.key, value: $event })"
+          />
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Agregar nuevo parámetro dinámico -->
+  <div class="add-param-box">
+    <h4>{{ t('params.addTitle') }}</h4>
+    <div class="add-param-form">
+      <input
+        #newKeyInput
+        type="text"
+        [placeholder]="t('params.namePlaceholder')"
+        class="add-input key-input"
+      />
+      <input
+        #newValInput
+        type="text"
+        [placeholder]="t('params.valuePlaceholder')"
+        class="add-input val-input"
+      />
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="
+          addParameter.emit({ key: newKeyInput.value, value: newValInput.value });
+          newKeyInput.value = '';
+          newValInput.value = '';
+        "
+      >
+        {{ t('params.addBtn') }}
+      </button>
+    </div>
+  </div>
+</div>

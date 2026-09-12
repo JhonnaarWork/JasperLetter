@@ -1,0 +1,148 @@
+/* display:contents para que .params-container siga participando directamente del layout
+   flex de .preview-pane (el padre), como si no hubiera envoltorio de componente. */
+:host {
+  display: contents;
+}
+
+.params-container {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background: #F9F9FB;
+}
+
+.params-intro {
+  margin-bottom: 14px;
+}
+
+.params-intro h3 {
+  margin: 0 0 3px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #2E6C99;
+}
+
+.params-intro p {
+  margin: 0;
+  font-size: 12px;
+  color: #758696;
+}
+
+.params-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.param-card {
+  background: #FFFFFF;
+  border: 1px solid #D5DCE0;
+  border-radius: 4px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 0.15s ease;
+}
+
+.param-card:hover {
+  border-color: #2E6C99;
+  box-shadow: 0 2px 5px rgba(46, 108, 153, 0.08);
+}
+
+.param-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.param-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2E6C99;
+  font-family: monospace;
+}
+
+.remove-param-btn {
+  background: transparent;
+  border: none;
+  color: #758696;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.remove-param-btn:hover {
+  color: #DC3545;
+}
+
+.param-input,
+.param-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #FFFFFF;
+  border: 1px solid #D5DCE0;
+  border-radius: 4px;
+  padding: 6px 9px;
+  font-size: 12px;
+  font-family: 'Soho', Arial, sans-serif;
+  color: #333333;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.param-input:focus,
+.param-textarea:focus {
+  border-color: #2E6C99;
+  box-shadow: 0 0 0 2px rgba(46, 108, 153, 0.12);
+}
+
+.param-textarea {
+  resize: vertical;
+  line-height: 1.4;
+}
+
+/* Agregar Parámetro */
+.add-param-box {
+  background: #FFFFFF;
+  border: 1px dashed #B8C8D4;
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.add-param-box h4 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #556877;
+}
+
+.add-param-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.add-input {
+  background: #FFFFFF;
+  border: 1px solid #D5DCE0;
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 12px;
+  font-family: 'Soho', Arial, sans-serif;
+  outline: none;
+}
+
+.add-input:focus {
+  border-color: #2E6C99;
+}
+
+.key-input {
+  flex: 1;
+  font-family: monospace;
+}
+
+.val-input {
+  flex: 2;
+}

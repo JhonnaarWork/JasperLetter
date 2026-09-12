@@ -1,0 +1,101 @@
+<section class="preview-pane">
+  <!-- Pestañas del panel derecho -->
+  <div class="preview-nav-bar">
+    <div class="tab-group">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="rightTab === 'preview'"
+        (click)="rightTabChange.emit('preview')"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+        <span>{{ t('preview.tabPdf') }}</span>
+      </button>
+
+      @if (!hasSelectedLetter) {
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="rightTab === 'params'"
+          (click)="rightTabChange.emit('params')"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
+          </svg>
+          <span>{{ t('preview.tabParams') }}</span>
+          <span class="counter-badge">{{ parameterEntries.length }}</span>
+        </button>
+      }
+    </div>
+
+    <div class="preview-tools">
+      <button
+        type="button"
+        class="icon-action-btn"
+        (click)="refresh.emit()"
+        [title]="t('preview.refreshTooltip')"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Banner de Error si falla la compilación -->
+  @if (errorMessage) {
+    <div class="error-banner">
+      <div class="error-icon">⚠️</div>
+      <div class="error-content">
+        <strong>{{ t('preview.errorHeader') }}</strong>
+        <p>{{ errorMessage }}</p>
+      </div>
+    </div>
+  }
+
+  <!-- Pestaña 1: Visor PDF -->
+  @if (rightTab === 'preview') {
+    <div class="pdf-container">
+      @if (loading) {
+        <div class="pdf-loading-overlay">
+          <div class="spinner"></div>
+          <p>{{ t('preview.loadingOverlay') }}</p>
+        </div>
+      }
+
+      @if (pdfUrl) {
+        <iframe
+          [src]="pdfUrl"
+          class="pdf-frame"
+          title="PDF"
+        ></iframe>
+      } @else if (!loading && !errorMessage) {
+        <div class="empty-state">
+          <p>{{ t('preview.emptyState') }}</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Pestaña 2: Formulario de Parámetros de Prueba -->
+  @if (rightTab === 'params') {
+    <app-parameters-form
+      [parameterEntries]="parameterEntries"
+      (parameterChange)="parameterChange.emit($event)"
+      (addParameter)="addParameter.emit($event)"
+      (removeParameter)="removeParameter.emit($event)"
+    />
+  }
+</section>
