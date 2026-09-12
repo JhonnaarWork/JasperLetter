@@ -1,194 +1,25 @@
 <div class="app-layout">
   <!-- Barra superior / Header -->
-  <header class="app-header">
-    <!-- Grupo Izquierdo: Marca Corporativa -->
-    <div class="header-left">
-      <div class="header-brand">
-        <img src="/assets/images/minsait-logo.png" alt="onesait customers" class="brand-logo-img" />
-        <div class="brand-divider"></div>
-        <div class="brand-text">
-          <h1 class="brand-title">{{ t('brand.title') }}</h1>
-          <span class="brand-subtitle">{{ t('brand.subtitle') }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Grupo Central: Selector de Carta, Formato y Vistas (Centrado) -->
-    <div class="header-center">
-      <!-- Botón Crear Carta -->
-      <button
-        type="button"
-        class="btn btn-create-letter"
-        (click)="requestCreateLetter()"
-        [title]="t('modal.createLetterDesc')"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-        <span>{{ t('header.createLetter') }}</span>
-      </button>
-
-      <!-- Selector de Carta o Plantilla -->
-      <label class="control-group">
-        <span class="control-label">{{ t('header.document') }}</span>
-        <select
-          class="select-input"
-          [ngModel]="currentSelection()"
-          (ngModelChange)="requestChangeSelection($event)"
-        >
-          @if (!currentSelection()) {
-            <option value="" disabled selected>{{ t('header.selectPlaceholder') }}</option>
-          }
-          @if (resourceLetters().length > 0) {
-            <optgroup [label]="t('header.lettersGroup')">
-              @for (letter of resourceLetters(); track letter.id) {
-                <option [value]="'resource:' + letter.id">
-                  {{ letter.name }} ({{ letter.format }})
-                </option>
-              }
-            </optgroup>
-          }
-          <optgroup [label]="t('header.samplesGroup')">
-            @for (sample of samples; track sample.id) {
-              <option [value]="'sample:' + sample.id">{{ sample.name }}</option>
-            }
-          </optgroup>
-        </select>
-      </label>
-
-      <!-- Selector de Formato JR6 / JR7 -->
-      <div class="format-badge-box" [title]="t('header.formatTooltip')">
-        <span class="format-label">{{ t('header.format') }}</span>
-        <div class="format-toggle">
-          <button
-            type="button"
-            class="fmt-btn"
-            [class.active]="letterFormat() === 'JR6'"
-            (click)="setLetterFormat('JR6')"
-            [title]="t('header.formatJr6Tooltip')"
-          >
-            JR6
-          </button>
-          <button
-            type="button"
-            class="fmt-btn"
-            [class.active]="letterFormat() === 'JR7'"
-            (click)="setLetterFormat('JR7')"
-            [title]="t('header.formatJr7Tooltip')"
-          >
-            JR7
-          </button>
-        </div>
-      </div>
-
-      <!-- Conmutador de modo de vista -->
-      <div class="view-mode-group">
-        <button
-          type="button"
-          class="mode-btn"
-          [class.active]="viewMode() === 'editor'"
-          (click)="setViewMode('editor')"
-          [title]="t('header.viewEditorTooltip')"
-        >
-          {{ t('header.viewEditor') }}
-        </button>
-        <button
-          type="button"
-          class="mode-btn"
-          [class.active]="viewMode() === 'split'"
-          (click)="setViewMode('split')"
-          [title]="t('header.viewSplitTooltip')"
-        >
-          {{ t('header.viewSplit') }}
-        </button>
-        <button
-          type="button"
-          class="mode-btn"
-          [class.active]="viewMode() === 'preview'"
-          (click)="setViewMode('preview')"
-          [title]="t('header.viewPdfTooltip')"
-        >
-          {{ t('header.viewPdf') }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Grupo Derecho: Acciones (Previsualizar, Guardar), Idioma y Marca Indra -->
-    <div class="header-right">
-      <!-- Acciones principales -->
-      <div class="header-actions">
-        <button
-          type="button"
-          class="btn btn-primary"
-          (click)="onPreviewClick()"
-          [disabled]="loading()"
-          [title]="t('header.previewTooltip')"
-        >
-          @if (loading()) {
-            <span class="spinner-inline"></span>
-            <span>{{ t('header.generating') }}</span>
-          } @else {
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="5 3 19 12 5 21 5 3"></polygon>
-            </svg>
-            <span>{{ t('header.preview') }}</span>
-          }
-        </button>
-
-        <button
-          type="button"
-          class="btn btn-secondary"
-          [class.btn-has-changes]="hasUnsavedChanges()"
-          [disabled]="!selectedLetterId() || saving()"
-          (click)="openSaveConfirmModal()"
-          [title]="selectedLetterId() ? (hasUnsavedChanges() ? 'Guardar componentes modificados (Ctrl+S)' : 'Sin cambios pendientes (Ctrl+S)') : t('header.saveTooltipDisabled')"
-        >
-          @if (saving()) {
-            <span class="spinner-inline"></span>
-            <span>{{ t('header.saving') }}</span>
-          } @else {
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-              <polyline points="17 21 17 13 7 13 7 21"></polyline>
-              <polyline points="7 3 7 8 15 8"></polyline>
-            </svg>
-            <span>{{ t('header.save') }}</span>
-            @if (dirtyCount() > 0) {
-              <span class="save-dirty-badge" title="Componentes con cambios sin guardar">{{ dirtyCount() }}</span>
-            }
-          }
-        </button>
-      </div>
-
-      <!-- Selector de Idioma (ES / EN) al estilo inCMS -->
-      <div class="lang-toggle-box" [title]="t('header.langTooltip')">
-        <button
-          type="button"
-          class="lang-btn"
-          [class.active]="currentLang() === 'es'"
-          (click)="setLanguage('es')"
-          title="Español"
-        >
-          ES
-        </button>
-        <button
-          type="button"
-          class="lang-btn"
-          [class.active]="currentLang() === 'en'"
-          (click)="setLanguage('en')"
-          title="English"
-        >
-          EN
-        </button>
-      </div>
-
-      <!-- Logotipo Corporativo Indra -->
-      <div class="header-corporate">
-        <img src="/assets/images/app-logo.png" alt="Indra" class="corporate-logo-img" title="Indra Minsait" />
-      </div>
-    </div>
-  </header>
+  <app-letter-header
+    [currentSelection]="currentSelection()"
+    [resourceLetters]="resourceLetters()"
+    [samples]="samples"
+    [letterFormat]="letterFormat()"
+    [viewMode]="viewMode()"
+    [loading]="loading()"
+    [saving]="saving()"
+    [hasUnsavedChanges]="hasUnsavedChanges()"
+    [selectedLetterId]="selectedLetterId()"
+    [dirtyCount]="dirtyCount()"
+    [currentLang]="currentLang()"
+    (createLetter)="requestCreateLetter()"
+    (selectionChange)="requestChangeSelection($event)"
+    (formatChange)="setLetterFormat($event)"
+    (viewModeChange)="setViewMode($event)"
+    (previewClick)="onPreviewClick()"
+    (saveClick)="openSaveConfirmModal()"
+    (languageChange)="setLanguage($event)"
+  />
 
   <!-- Banner de notificación de guardado -->
   @if (saveStatus().message) {

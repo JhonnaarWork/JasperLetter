@@ -14,6 +14,7 @@ import { SelectAdapterModalComponent } from './features/letter-editor/components
 import { SelectXmlDataModalComponent } from './features/letter-editor/components/modals/select-xml-data-modal/select-xml-data-modal.component';
 import { WelcomeScreenComponent } from './features/letter-editor/components/welcome-screen/welcome-screen.component';
 import { PreviewPaneComponent } from './features/letter-editor/components/preview-pane/preview-pane.component';
+import { LetterHeaderComponent } from './features/letter-editor/components/letter-header/letter-header.component';
 import { LetterEditorStore } from './features/letter-editor/state/letter-editor.store';
 import { LetterCatalogService } from './features/letter-editor/state/letter-catalog.service';
 
@@ -46,7 +47,8 @@ import { LetterCatalogService } from './features/letter-editor/state/letter-cata
     SelectAdapterModalComponent,
     SelectXmlDataModalComponent,
     WelcomeScreenComponent,
-    PreviewPaneComponent
+    PreviewPaneComponent,
+    LetterHeaderComponent
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
