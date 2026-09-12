@@ -492,6 +492,63 @@ lib-jasper-toolbar .zoom + .sep {
   font-weight: 400;
 }
 
+/* Compartidas entre AppComponent (pestañas JRXML/Datos XML, que siguen ahí) y
+   DataAdapterPanelComponent (pestaña Data Adapter) — misma estructura visual de "vista de
+   código" en las tres pestañas del panel izquierdo. */
+.code-view-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #FFFFFF;
+}
+
+.code-view-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #F7F9FA;
+  border-bottom: 1px solid #D5DCE0;
+  font-size: 12px;
+  color: #333333;
+}
+
+.code-toolbar-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.code-toolbar-info code {
+  background: #FFFFFF;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #D5DCE0;
+  color: #2E6C99;
+  font-weight: 600;
+}
+
+.btn-mini {
+  background: #FFFFFF;
+  border: 1px solid #D5DCE0;
+  color: #556877;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Soho', Arial, sans-serif;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-mini:hover {
+  border-color: #2E6C99;
+  color: #2E6C99;
+  background: #F0F4F8;
+}
+
 /* Compartidas entre AppComponent (pestañas izquierdas del editor: .left-tab-group,
    .left-tab-btn, .pane-header-tabs) y PreviewPaneComponent (pestañas derechas: .tab-group,
    .tab-btn, .preview-nav-bar) — mismo estilo visual, dos componentes distintos. También las

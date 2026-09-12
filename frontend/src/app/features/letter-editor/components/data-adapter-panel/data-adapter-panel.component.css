@@ -1,0 +1,361 @@
+/* .code-view-container, .code-view-toolbar, .code-toolbar-info (+ code) y .btn-mini (+:hover)
+   viven en styles.css global porque se comparten con las pestañas de JRXML/Datos XML que
+   siguen en AppComponent. */
+
+.da-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.code-editor-wrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+}
+
+.adapter-note {
+  font-size: 11px;
+  color: #758696;
+}
+
+.da-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.da-mode-toggle {
+  display: flex;
+  background: #EAEFF4;
+  border-radius: 4px;
+  padding: 2px;
+  border: 1px solid #D5DCE0;
+}
+
+.da-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  color: #556877;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Soho', Arial, sans-serif;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.da-mode-btn:hover:not(.active) {
+  color: #2E6C99;
+  background: #D5E1EA;
+}
+
+.da-mode-btn.active {
+  background: #2E6C99;
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(46, 108, 153, 0.3);
+}
+
+.btn-test-adapter {
+  background: #FFFFFF;
+  border: 1px solid #2E6C99;
+  color: #2E6C99;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.btn-test-adapter:hover:not(:disabled) {
+  background: #2E6C99;
+  color: #FFFFFF;
+  border-color: #2E6C99;
+}
+
+.btn-test-adapter:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-adapter-select {
+  background: #EFF6FF !important;
+  color: #0F5B9E !important;
+  border: 1px solid #BFDBFE !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+
+.btn-adapter-select:hover {
+  background: #DBEAFE !important;
+}
+
+.da-form-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  background: #F9F9FB;
+}
+
+.da-form-content {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.da-header-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #FFFFFF;
+  border: 1px solid #D5DCE0;
+  border-left: 4px solid #2E6C99;
+  border-radius: 6px;
+  padding: 14px 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.da-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #EBF3F8;
+  flex-shrink: 0;
+}
+
+.da-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.da-header-text h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #2E6C99;
+  letter-spacing: -0.2px;
+}
+
+.da-header-text p {
+  margin: 2px 0 0 0;
+  font-size: 11.5px;
+  color: #758696;
+}
+
+.da-class-badge {
+  background: #F0F4F8;
+  border: 1px solid #D5DCE0;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  color: #556877;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.da-card {
+  background: #FFFFFF;
+  border: 1px solid #D5DCE0;
+  border-radius: 6px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.da-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2E6C99;
+  border-bottom: 1px solid #EEF2F5;
+  padding-bottom: 8px;
+}
+
+.da-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.da-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.da-full-width {
+  grid-column: 1 / -1;
+}
+
+.da-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #445462;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.da-label-with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.da-label-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.da-link-btn {
+  background: transparent;
+  border: none;
+  color: #2E6C99;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 2px;
+  text-decoration: underline;
+  font-family: 'Soho', Arial, sans-serif;
+}
+
+.da-link-btn:hover {
+  color: #23587D;
+}
+
+.da-input {
+  background: #FFFFFF;
+  border: 1px solid #D5DCE0;
+  border-radius: 4px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-family: 'Soho', Arial, sans-serif;
+  color: #333333;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.da-input:focus {
+  border-color: #2E6C99;
+  box-shadow: 0 0 0 2px rgba(46, 108, 153, 0.15);
+}
+
+.da-input.code-font {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 11.5px;
+}
+
+.da-select {
+  background: #FFFFFF;
+  border: 1px solid #D5DCE0;
+  border-radius: 4px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-family: 'Soho', Arial, sans-serif;
+  color: #333333;
+  outline: none;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.da-select:focus {
+  border-color: #2E6C99;
+  box-shadow: 0 0 0 2px rgba(46, 108, 153, 0.15);
+}
+
+.da-hint {
+  font-size: 10.5px;
+  color: #8292A1;
+  line-height: 1.2;
+}
+
+.da-checkbox-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.da-checkbox-card:hover {
+  border-color: #2E6C99;
+  background: #F0F4F8;
+}
+
+.da-checkbox {
+  margin-top: 3px;
+  accent-color: #2E6C99;
+  cursor: pointer;
+  width: 15px;
+  height: 15px;
+}
+
+.da-checkbox-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.da-checkbox-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #333333;
+}
+
+.da-checkbox-desc {
+  font-size: 10.5px;
+  color: #758696;
+  line-height: 1.2;
+}
+
+.da-input-combo {
+  display: flex;
+  gap: 6px;
+}
+
+.da-input-combo .da-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.da-quick-select {
+  background: #F0F4F8;
+  border: 1px solid #D5DCE0;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 11px;
+  color: #556877;
+  font-family: 'Soho', Arial, sans-serif;
+  cursor: pointer;
+  max-width: 135px;
+}
+
+.da-quick-select:hover {
+  border-color: #2E6C99;
+  color: #2E6C99;
+}

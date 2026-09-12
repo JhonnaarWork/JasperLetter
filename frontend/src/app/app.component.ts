@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { I18nService, Language } from './services/i18n.service';
 import { CreateLetterRequest, DataAdapterOptionInfo, DataFileInfo } from './models/letter-resource.model';
-import { XmlDataAdapterModel } from './models/data-adapter.model';
 import { XmlCodeEditorComponent } from './components/xml-code-editor/xml-code-editor.component';
 import { CreateLetterModalComponent } from './components/create-letter-modal/create-letter-modal.component';
 import { VisualEditorPaneComponent } from './features/letter-editor/components/visual-editor-pane/visual-editor-pane.component';
@@ -15,6 +14,7 @@ import { SelectXmlDataModalComponent } from './features/letter-editor/components
 import { WelcomeScreenComponent } from './features/letter-editor/components/welcome-screen/welcome-screen.component';
 import { PreviewPaneComponent } from './features/letter-editor/components/preview-pane/preview-pane.component';
 import { LetterHeaderComponent } from './features/letter-editor/components/letter-header/letter-header.component';
+import { DataAdapterPanelComponent } from './features/letter-editor/components/data-adapter-panel/data-adapter-panel.component';
 import { LetterEditorStore } from './features/letter-editor/state/letter-editor.store';
 import { LetterCatalogService } from './features/letter-editor/state/letter-catalog.service';
 
@@ -48,7 +48,8 @@ import { LetterCatalogService } from './features/letter-editor/state/letter-cata
     SelectXmlDataModalComponent,
     WelcomeScreenComponent,
     PreviewPaneComponent,
-    LetterHeaderComponent
+    LetterHeaderComponent,
+    DataAdapterPanelComponent
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
@@ -88,9 +89,7 @@ export class AppComponent implements OnInit {
   readonly originalXmlData = this.letterEditor.originalXmlData;
   readonly dataAdapter = this.letterEditor.dataAdapter;
   readonly originalDataAdapter = this.letterEditor.originalDataAdapter;
-  readonly dataAdapterMode = this.letterEditor.dataAdapterMode;
   readonly dataAdapterModel = this.letterEditor.dataAdapterModel;
-  readonly testingDataAdapter = this.letterEditor.testingDataAdapter;
   readonly testResultModalOpen = this.letterEditor.testResultModalOpen;
   readonly testResult = this.letterEditor.testResult;
   readonly isDataAdapterConnected = this.letterEditor.isDataAdapterConnected;
@@ -195,30 +194,6 @@ export class AppComponent implements OnInit {
     this.letterEditor.reloadXmlDataFromLetter(letterId);
   }
 
-  setDataAdapterMode(mode: 'form' | 'xml'): void {
-    this.letterEditor.setDataAdapterMode(mode);
-  }
-
-  updateDataAdapterField<K extends keyof XmlDataAdapterModel>(field: K, value: XmlDataAdapterModel[K]): void {
-    this.letterEditor.updateDataAdapterField(field, value);
-  }
-
-  suggestStandardXmlPath(): void {
-    this.letterEditor.suggestStandardXmlPath();
-  }
-
-  onDataAdapterChange(newData: string): void {
-    this.letterEditor.onDataAdapterChange(newData);
-  }
-
-  resetDataAdapter(): void {
-    this.letterEditor.resetDataAdapter();
-  }
-
-  runDataAdapterTest(): void {
-    this.letterEditor.runDataAdapterTest();
-  }
-
   closeTestModal(): void {
     this.letterEditor.closeTestModal();
   }
@@ -245,10 +220,6 @@ export class AppComponent implements OnInit {
 
   linkDataXmlToAdapter(xmlRelativePath: string): void {
     this.letterEditor.linkDataXmlToAdapter(xmlRelativePath);
-  }
-
-  openSelectAdapterModal(): void {
-    this.letterEditor.openSelectAdapterModal();
   }
 
   closeSelectAdapterModal(): void {

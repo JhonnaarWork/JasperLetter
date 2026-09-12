@@ -1,0 +1,334 @@
+<div class="code-view-container da-container">
+  <div class="code-view-toolbar">
+    <div class="code-toolbar-info">
+      <strong>{{ t('toolbar.adapterFile') }}</strong>
+      <code>resources/reports/{{ store.selectedLetterId() }}/xmlDataAdapter.xml</code>
+      <span class="adapter-note">{{ t('toolbar.adapterNote') }}</span>
+    </div>
+
+    <!-- Conmutador de Modo: Formulario (Interfaz) vs Código XML Plano -->
+    <div class="da-toolbar-actions">
+      <div class="da-mode-toggle" [title]="t('da.subtitle')">
+        <button
+          type="button"
+          class="da-mode-btn"
+          [class.active]="store.dataAdapterMode() === 'form'"
+          (click)="store.setDataAdapterMode('form')"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+          <span>{{ t('da.modeForm') }}</span>
+        </button>
+        <button
+          type="button"
+          class="da-mode-btn"
+          [class.active]="store.dataAdapterMode() === 'xml'"
+          (click)="store.setDataAdapterMode('xml')"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+          <span>{{ t('da.modeXml') }}</span>
+        </button>
+      </div>
+
+      <button
+        type="button"
+        class="btn-mini btn-test-adapter"
+        (click)="store.runDataAdapterTest()"
+        [disabled]="store.testingDataAdapter()"
+        [title]="t('da.testTooltip')"
+      >
+        @if (store.testingDataAdapter()) {
+          <span class="spinner-inline"></span>
+          <span>{{ t('da.testing') }}</span>
+        } @else {
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          <span>{{ t('da.testBtn') }}</span>
+        }
+      </button>
+
+      <button
+        type="button"
+        class="btn-mini btn-adapter-select"
+        (click)="store.openSelectAdapterModal()"
+        title="Cambiar o vincular otro Data Adapter"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+        </svg>
+        <span>Cambiar Adapter...</span>
+      </button>
+
+      <button
+        type="button"
+        class="btn-mini"
+        (click)="store.resetDataAdapter()"
+        [title]="t('toolbar.restoreOriginalTooltip')"
+      >
+        {{ t('toolbar.restoreOriginal') }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Opción 1: Interfaz con campos específicos estilo Jaspersoft Studio -->
+  @if (store.dataAdapterMode() === 'form') {
+    <div class="da-form-wrapper">
+      <div class="da-form-content">
+        <!-- Cabecera descriptiva del adaptador -->
+        <div class="da-header-banner">
+          <div class="da-header-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E6C99" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+            </svg>
+          </div>
+          <div class="da-header-text">
+            <h4>{{ t('da.title') }}</h4>
+            <p>{{ t('da.subtitle') }}</p>
+          </div>
+          <div class="da-class-badge">
+            <span>XmlDataAdapterImpl</span>
+          </div>
+        </div>
+
+        <!-- Bloque 1: Identificación y Archivo de Datos -->
+        <div class="da-card">
+          <div class="da-card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            <span>{{ t('da.sectionGeneral') }}</span>
+          </div>
+
+          <div class="da-grid-2">
+            <!-- Nombre del adaptador -->
+            <div class="da-field-group">
+              <label class="da-label" for="da-name">
+                {{ t('da.nameLabel') }} <span class="da-req">*</span>
+              </label>
+              <input
+                id="da-name"
+                type="text"
+                class="da-input"
+                [ngModel]="store.dataAdapterModel().name"
+                (ngModelChange)="updateField('name', $event)"
+                placeholder="xmlDataAdapter_ETIPLET..."
+              />
+              <span class="da-hint">{{ t('da.nameHint') }}</span>
+            </div>
+
+            <!-- Tipo de Localizador -->
+            <div class="da-field-group">
+              <label class="da-label" for="da-loctype">
+                {{ t('da.locationTypeLabel') }}
+              </label>
+              <select
+                id="da-loctype"
+                class="da-select"
+                [ngModel]="store.dataAdapterModel().locationType"
+                (ngModelChange)="updateField('locationType', $event)"
+              >
+                <option value="repositoryDataLocation">repositoryDataLocation (Relativo / Repositorio)</option>
+                <option value="fileDataLocation">fileDataLocation (Ruta directa de archivo)</option>
+                <option value="standardDataLocation">standardDataLocation (Estándar)</option>
+              </select>
+              <span class="da-hint">xsi:type del elemento dataFile</span>
+            </div>
+          </div>
+
+          <!-- Ruta de archivo XML -->
+          <div class="da-field-group da-full-width">
+            <div class="da-label-with-action">
+              <label class="da-label" for="da-location">
+                {{ t('da.locationLabel') }} <span class="da-req">*</span>
+              </label>
+              <div class="da-label-actions">
+                @if (store.selectedLetterId()) {
+                  <button
+                    type="button"
+                    class="da-link-btn"
+                    (click)="store.suggestStandardXmlPath()"
+                    [title]="t('da.quickXmlPathHint', store.selectedLetterId()!)"
+                  >
+                    ⚡ {{ t('da.quickXmlPath') }}
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="da-link-btn"
+                  (click)="store.openSelectXmlDataModal()"
+                  title="Seleccionar o crear archivo de datos XML"
+                >
+                  📂 Cambiar / Crear XML...
+                </button>
+              </div>
+            </div>
+            <input
+              id="da-location"
+              type="text"
+              class="da-input code-font"
+              [ngModel]="store.dataAdapterModel().location"
+              (ngModelChange)="updateField('location', $event)"
+              placeholder="src\main\resources\data\xml\ETIPLET... o /data/xml/..."
+            />
+            <span class="da-hint">{{ t('da.locationHint') }}</span>
+          </div>
+        </div>
+
+        <!-- Bloque 2: Parámetros de Conexión XML -->
+        <div class="da-card">
+          <div class="da-card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>{{ t('da.sectionConfig') }}</span>
+          </div>
+
+          <div class="da-grid-2">
+            <!-- Usar conexión -->
+            <label class="da-checkbox-card">
+              <input
+                type="checkbox"
+                class="da-checkbox"
+                [ngModel]="store.dataAdapterModel().useConnection"
+                (ngModelChange)="updateField('useConnection', $event)"
+              />
+              <div class="da-checkbox-text">
+                <span class="da-checkbox-title">{{ t('da.useConnectionLabel') }}</span>
+                <span class="da-checkbox-desc">{{ t('da.useConnectionHint') }}</span>
+              </div>
+            </label>
+
+            <!-- Sensible a Namespace -->
+            <label class="da-checkbox-card">
+              <input
+                type="checkbox"
+                class="da-checkbox"
+                [ngModel]="store.dataAdapterModel().namespaceAware"
+                (ngModelChange)="updateField('namespaceAware', $event)"
+              />
+              <div class="da-checkbox-text">
+                <span class="da-checkbox-title">{{ t('da.namespaceAwareLabel') }}</span>
+                <span class="da-checkbox-desc">{{ t('da.namespaceAwareHint') }}</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- selectExpression XPath -->
+          <div class="da-field-group da-full-width" style="margin-top: 10px;">
+            <label class="da-label" for="da-selectexpr">
+              {{ t('da.selectExprLabel') }}
+            </label>
+            <input
+              id="da-selectexpr"
+              type="text"
+              class="da-input code-font"
+              [ngModel]="store.dataAdapterModel().selectExpression"
+              (ngModelChange)="updateField('selectExpression', $event)"
+              [placeholder]="t('da.selectExprPlaceholder')"
+            />
+            <span class="da-hint">{{ t('da.selectExprHint') }}</span>
+          </div>
+        </div>
+
+        <!-- Bloque 3: Configuración Regional y Zona Horaria -->
+        <div class="da-card">
+          <div class="da-card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            <span>{{ t('da.sectionLocale') }}</span>
+          </div>
+
+          <div class="da-grid-2">
+            <!-- Locale -->
+            <div class="da-field-group">
+              <label class="da-label" for="da-locale">
+                {{ t('da.localeLabel') }}
+              </label>
+              <div class="da-input-combo">
+                <input
+                  id="da-locale"
+                  type="text"
+                  class="da-input"
+                  [ngModel]="store.dataAdapterModel().locale"
+                  (ngModelChange)="updateField('locale', $event)"
+                  placeholder="es_ES"
+                />
+                <select
+                  class="da-quick-select"
+                  (change)="updateField('locale', $any($event.target).value)"
+                >
+                  <option value="" disabled selected>Presets</option>
+                  <option value="es_ES">es_ES (España)</option>
+                  <option value="es_UY">es_UY (Uruguay)</option>
+                  <option value="es_AR">es_AR (Argentina)</option>
+                  <option value="es_CO">es_CO (Colombia)</option>
+                  <option value="en_US">en_US (USA)</option>
+                  <option value="en_GB">en_GB (UK)</option>
+                </select>
+              </div>
+              <span class="da-hint">Formato de idioma y país (ej: es_ES)</span>
+            </div>
+
+            <!-- Time Zone -->
+            <div class="da-field-group">
+              <label class="da-label" for="da-timezone">
+                {{ t('da.timeZoneLabel') }}
+              </label>
+              <div class="da-input-combo">
+                <input
+                  id="da-timezone"
+                  type="text"
+                  class="da-input"
+                  [ngModel]="store.dataAdapterModel().timeZone"
+                  (ngModelChange)="updateField('timeZone', $event)"
+                  placeholder="America/Montevideo"
+                />
+                <select
+                  class="da-quick-select"
+                  (change)="updateField('timeZone', $any($event.target).value)"
+                >
+                  <option value="" disabled selected>Presets</option>
+                  <option value="America/Montevideo">America/Montevideo (Uruguay)</option>
+                  <option value="America/Bogota">America/Bogota (Colombia)</option>
+                  <option value="America/Argentina/Buenos_Aires">America/Argentina/Buenos_Aires</option>
+                  <option value="America/Santiago">America/Santiago (Chile)</option>
+                  <option value="Europe/Madrid">Europe/Madrid (España)</option>
+                  <option value="UTC">UTC</option>
+                </select>
+              </div>
+              <span class="da-hint">Zona horaria de referencia para fechas</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Opción 2: Código XML (tal como en Jaspersoft Studio pestaña Source) -->
+  @if (store.dataAdapterMode() === 'xml') {
+    <div class="code-editor-wrapper da-xml-editor-wrapper">
+      <app-xml-code-editor
+        [code]="store.dataAdapter()"
+        (codeChange)="store.onDataAdapterChange($event)"
+        [filename]="store.selectedLetterId() ? 'resources/reports/' + store.selectedLetterId() + '/xmlDataAdapter.xml' : 'xmlDataAdapter.xml'"
+        [placeholder]="t('toolbar.adapterPlaceholder')"
+      ></app-xml-code-editor>
+    </div>
+  }
+</div>
