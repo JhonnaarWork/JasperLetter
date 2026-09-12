@@ -1,3 +1,6 @@
+const DEFAULT_LOCALE = 'es_ES';
+const DEFAULT_TIME_ZONE = 'America/Montevideo';
+
 export interface XmlDataAdapterModel {
   name: string;
   location: string;
@@ -36,8 +39,8 @@ export function getDefaultXmlDataAdapterModel(letterId?: string): XmlDataAdapter
     useConnection: true,
     namespaceAware: false,
     selectExpression: '',
-    locale: 'es_ES',
-    timeZone: 'America/Montevideo'
+    locale: DEFAULT_LOCALE,
+    timeZone: DEFAULT_TIME_ZONE
   };
 }
 
@@ -107,8 +110,8 @@ export function serializeXmlDataAdapter(model: XmlDataAdapterModel): string {
   <useConnection>${model.useConnection ? 'true' : 'false'}</useConnection>
   <namespaceAware>${model.namespaceAware ? 'true' : 'false'}</namespaceAware>
   <selectExpression>${escapeXml(model.selectExpression)}</selectExpression>
-  <locale>${escapeXml(model.locale || 'es_ES')}</locale>
-  <timeZone>${escapeXml(model.timeZone || 'America/Montevideo')}</timeZone>
+  <locale>${escapeXml(model.locale || DEFAULT_LOCALE)}</locale>
+  <timeZone>${escapeXml(model.timeZone || DEFAULT_TIME_ZONE)}</timeZone>
 </xmlDataAdapter>
 `;
 }

@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 // @ts-ignore
 import nspell from 'nspell';
+import { DOMAIN_TERMS_ES, DOMAIN_TERMS_EN } from './spellcheck-domain-terms';
 
 export interface SpellError {
   word: string;
@@ -21,21 +22,8 @@ export class SpellcheckService {
 
   private readonly ignoredWords = new Set<string>();
 
-  // Whitelist of valid domain, business, and utility terms in Spanish
-  private readonly domainEs = new Set<string>([
-    'distribuidora', 'distribuidoras', 'distribuidor', 'distribuidores',
-    'regularizar', 'regularizarlas', 'regularizarlos', 'regularizarlo', 'regularizarla',
-    'regularizarse', 'regularización', 'regularizacion',
-    'abastecimiento', 'suministro', 'suministros', 'facturación', 'facturacion',
-    'instalación', 'instalacion', 'instalaciones', 'responsabilidades',
-    'incms', 'onesait', 'indra', 'minsait', 'jasper', 'jasperreports', 'jrxml',
-    'etiplet003', 'etiplet', 'iban', 'cif', 'nif', 'dni', 'nis', 'titular', 'titulares'
-  ]);
-
-  private readonly domainEn = new Set<string>([
-    'incms', 'onesait', 'indra', 'minsait', 'jasper', 'jasperreports', 'jrxml',
-    'etiplet003', 'etiplet', 'iban', 'cif', 'nif', 'dni', 'nis'
-  ]);
+  private readonly domainEs = new Set<string>(DOMAIN_TERMS_ES);
+  private readonly domainEn = new Set<string>(DOMAIN_TERMS_EN);
 
   constructor() {
     this.init();
