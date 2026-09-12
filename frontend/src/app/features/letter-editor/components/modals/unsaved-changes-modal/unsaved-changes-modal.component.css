@@ -1,6 +1,11 @@
 /* Los estilos base (.da-modal-*, .btn*, .modal-dialog-subtitle) viven en styles.css a nivel
    global. Acá solo lo específico de este modal. */
 
+.da-modal-header.warning {
+  background: #FFFBEB;
+  border-bottom-color: #FDE68A;
+}
+
 .unsaved-items-summary {
   margin: 0;
   padding-left: 20px;

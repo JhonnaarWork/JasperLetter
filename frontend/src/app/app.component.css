@@ -292,14 +292,11 @@
    extraídos a sus propios componentes). El resto del modal de Guardado Granular
    (.save-targets-list y relacionados) se movió a SaveConfirmModalComponent. */
 
-.da-modal-header.warning {
-  background: #FFFBEB;
-  border-bottom-color: #FDE68A;
-}
-
 /* Modal Cambios sin Guardar (Guard) */
-/* .unsaved-items-summary, .dirty-bullet, .btn-danger-outline: movidos a
-   UnsavedChangesModalComponent. */
+/* .unsaved-items-summary, .dirty-bullet, .btn-danger-outline, .da-modal-header.warning:
+   movidos a UnsavedChangesModalComponent. (.da-modal-header.warning quedó huérfano acá tras la
+   extracción original y se corrige ahora: sin este fix, el modal de cambios sin guardar
+   perdía el color de cabecera de advertencia). */
 
 /* Modal Data Adapter y XML Listas */
 /* .adapter-options-list/.xml-options-list, .adapter-option-row/.xml-option-row,
