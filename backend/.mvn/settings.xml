@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Settings de Maven propios de este proyecto (no relacionado con Indra/InCMS).
+
+  La instalación de Maven de esta máquina trae un settings.xml GLOBAL
+  (<maven-home>/conf/settings.xml) con un perfil corporativo activo por defecto que redirige
+  TODA resolución de dependencias — incluidas las públicas de Spring Boot — hacia un Nexus
+  interno (slmaven.indra.es). Ese repositorio no es alcanzable fuera de esa red/VPN, y este
+  proyecto no tiene ninguna relación con ese entorno corporativo.
+
+  .mvn/maven.config (en este mismo directorio) le pasa "-gs .mvn/settings.xml" a cada
+  invocación de mvn SOLO cuando se ejecuta dentro de este proyecto (backend/), reemplazando
+  ese settings.xml global por este archivo — sin mirrors ni repositorios corporativos — de
+  forma que la build resuelva contra el Maven Central público de siempre, sin depender de
+  ninguna VPN. No modifica el settings.xml global de la instalación de Maven ni afecta a
+  ningún otro proyecto que sí necesite conectarse a Indra: esos siguen usando la
+  configuración corporativa normal, sin cambios.
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+</settings>
