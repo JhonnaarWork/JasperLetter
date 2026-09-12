@@ -1,0 +1,103 @@
+@if (open) {
+  <div class="da-modal-overlay" (click)="close.emit()">
+    <div class="da-modal-dialog select-xml-dialog" (click)="$event.stopPropagation()">
+      <div class="da-modal-header">
+        <div class="da-modal-header-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F5B9E" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+        </div>
+        <div class="da-modal-header-title">
+          <h3>{{ t('modal.selectXmlTitle') }}</h3>
+          <span class="modal-dialog-subtitle">Al seleccionar o crear un archivo XML, se configurará automáticamente en el Data Adapter.</span>
+        </div>
+        <button type="button" class="da-modal-close-btn" (click)="close.emit()">×</button>
+      </div>
+
+      <div class="da-modal-body">
+        <div class="modal-subtabs">
+          <button
+            type="button"
+            class="modal-subtab-btn"
+            [class.active]="!creatingNew"
+            (click)="creatingNewChange.emit(false)"
+          >
+            {{ t('modal.existingXmlTab') }}
+          </button>
+          <button
+            type="button"
+            class="modal-subtab-btn"
+            [class.active]="creatingNew"
+            (click)="creatingNewChange.emit(true)"
+          >
+            {{ t('modal.newXmlTab') }}
+          </button>
+        </div>
+
+        @if (!creatingNew) {
+          @if (loading) {
+            <div class="loading-state-box">
+              <span class="spinner-inline"></span>
+              <span>Buscando archivos XML en resources/data/xml/...</span>
+            </div>
+          } @else {
+            <div class="xml-options-list">
+              @for (file of files; track file.relativePath) {
+                <div class="xml-option-row">
+                  <div class="xor-info">
+                    <strong>{{ file.fileName }}</strong>
+                    <span class="xor-path">{{ file.relativePath }}</span>
+                    @if (file.sizeBytes) {
+                      <span class="xor-size">({{ file.sizeBytes }} bytes)</span>
+                    }
+                  </div>
+                  <button type="button" class="btn btn-mini btn-primary" (click)="selectFile.emit(file)">
+                    Vincular al Data Adapter
+                  </button>
+                </div>
+              }
+              @if (files.length === 0) {
+                <p class="empty-list-note">No se encontraron archivos XML en resources/data/xml/.</p>
+              }
+            </div>
+          }
+        } @else {
+          <div class="create-xml-form">
+            <div class="form-field-group">
+              <label class="form-label" for="new-xml-filename">Nombre del archivo XML:</label>
+              <input
+                id="new-xml-filename"
+                type="text"
+                class="form-input code-font"
+                [ngModel]="newFileName"
+                (ngModelChange)="newFileNameChange.emit($event)"
+                placeholder="Ej: ETIPLET004.xml"
+              />
+              <span class="form-hint">Se creará en <code>resources/data/xml/&#123;nombre&#125;</code> con estructura básica para JasperReports.</span>
+            </div>
+            <button
+              type="button"
+              class="btn btn-primary"
+              [disabled]="loading || !newFileName.trim()"
+              (click)="submitCreate.emit()"
+            >
+              @if (loading) {
+                <span class="spinner-inline"></span>
+                <span>Creando archivo...</span>
+              } @else {
+                <span>Crear y Vincular al Data Adapter</span>
+              }
+            </button>
+          </div>
+        }
+      </div>
+
+      <div class="da-modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="close.emit()">
+          {{ t('modal.cancel') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

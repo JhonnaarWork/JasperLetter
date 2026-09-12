@@ -1,0 +1,21 @@
+/* Los estilos base (.da-modal-*, .btn*, .modal-dialog-subtitle) y los compartidos con
+   SelectXmlDataModal (.adapter-options-list, .adapter-option-row, .aor-info, .aor-path,
+   .loading-state-box, .empty-list-note) viven en styles.css a nivel global. Acá solo lo
+   específico de este modal. */
+
+.aor-loc {
+  font-size: 11px;
+  color: #475569;
+}
+
+.aor-loc code {
+  color: #0F5B9E;
+}
+
+.adapter-modal-actions-bottom {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #CBD5E1;
+  display: flex;
+  justify-content: center;
+}

@@ -10,6 +10,8 @@ import { VisualEditorPaneComponent } from './features/letter-editor/components/v
 import { TestResultModalComponent } from './features/letter-editor/components/modals/test-result-modal/test-result-modal.component';
 import { SaveConfirmModalComponent } from './features/letter-editor/components/modals/save-confirm-modal/save-confirm-modal.component';
 import { UnsavedChangesModalComponent } from './features/letter-editor/components/modals/unsaved-changes-modal/unsaved-changes-modal.component';
+import { SelectAdapterModalComponent } from './features/letter-editor/components/modals/select-adapter-modal/select-adapter-modal.component';
+import { SelectXmlDataModalComponent } from './features/letter-editor/components/modals/select-xml-data-modal/select-xml-data-modal.component';
 import { LetterEditorStore } from './features/letter-editor/state/letter-editor.store';
 import { LetterCatalogService } from './features/letter-editor/state/letter-catalog.service';
 
@@ -38,7 +40,9 @@ import { LetterCatalogService } from './features/letter-editor/state/letter-cata
     VisualEditorPaneComponent,
     TestResultModalComponent,
     SaveConfirmModalComponent,
-    UnsavedChangesModalComponent
+    UnsavedChangesModalComponent,
+    SelectAdapterModalComponent,
+    SelectXmlDataModalComponent
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],

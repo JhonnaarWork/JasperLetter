@@ -1,0 +1,59 @@
+@if (open) {
+  <div class="da-modal-overlay" (click)="close.emit()">
+    <div class="da-modal-dialog select-adapter-dialog" (click)="$event.stopPropagation()">
+      <div class="da-modal-header">
+        <div class="da-modal-header-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F5B9E" stroke-width="2">
+            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+          </svg>
+        </div>
+        <div class="da-modal-header-title">
+          <h3>{{ t('modal.selectAdapterTitle') }}</h3>
+          <span class="modal-dialog-subtitle">Al asignar un adaptador, se vinculará automáticamente en la propiedad del JRXML.</span>
+        </div>
+        <button type="button" class="da-modal-close-btn" (click)="close.emit()">×</button>
+      </div>
+
+      <div class="da-modal-body">
+        @if (loading) {
+          <div class="loading-state-box">
+            <span class="spinner-inline"></span>
+            <span>Cargando adaptadores disponibles...</span>
+          </div>
+        } @else {
+          <div class="adapter-options-list">
+            @for (adapter of adapters; track adapter.relativePath) {
+              <div class="adapter-option-row">
+                <div class="aor-info">
+                  <strong>{{ adapter.name }}</strong>
+                  <span class="aor-path">{{ adapter.relativePath }}</span>
+                  <span class="aor-loc">Datos: <code>{{ adapter.location || '(Sin archivo asignado)' }}</code></span>
+                </div>
+                <button type="button" class="btn btn-mini btn-primary" (click)="selectAdapter.emit(adapter)">
+                  Asignar a esta Carta
+                </button>
+              </div>
+            }
+            @if (adapters.length === 0) {
+              <p class="empty-list-note">No se encontraron otros adaptadores en el repositorio.</p>
+            }
+          </div>
+
+          <div class="adapter-modal-actions-bottom">
+            <button type="button" class="btn btn-outline" (click)="createNew.emit(); close.emit()">
+              + Generar nuevo xmlDataAdapter.xml para {{ letterId }}
+            </button>
+          </div>
+        }
+      </div>
+
+      <div class="da-modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="close.emit()">
+          {{ t('modal.cancel') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

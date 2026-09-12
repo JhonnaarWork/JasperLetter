@@ -1,0 +1,45 @@
+/* Los estilos base (.da-modal-*, .btn*, .form-*, .modal-dialog-subtitle) y los compartidos con
+   SelectAdapterModal (.xml-options-list, .xml-option-row, .xor-info, .xor-path,
+   .loading-state-box, .empty-list-note) viven en styles.css a nivel global. Acá solo lo
+   específico de este modal. */
+
+.xor-size {
+  font-size: 11px;
+  color: #94A3B8;
+}
+
+.modal-subtabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #E2E8F0;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+}
+
+.modal-subtab-btn {
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-subtab-btn:hover {
+  background: #F1F5F9;
+  color: #1E293B;
+}
+
+.modal-subtab-btn.active {
+  background: #EFF6FF;
+  color: #0F5B9E;
+}
+
+.create-xml-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}

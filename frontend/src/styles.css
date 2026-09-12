@@ -492,3 +492,61 @@ lib-jasper-toolbar .zoom + .sep {
   font-weight: 400;
 }
 
+/* Compartidas entre SelectAdapterModalComponent y SelectXmlDataModalComponent
+   (listas de opciones con la misma estructura visual). */
+.adapter-options-list, .xml-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.adapter-option-row, .xml-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  gap: 12px;
+}
+
+.aor-info, .xor-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.aor-info strong, .xor-info strong {
+  font-size: 13px;
+  color: #1E293B;
+}
+
+.aor-path, .xor-path {
+  font-size: 11px;
+  color: #64748B;
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+
+.loading-state-box {
+  padding: 24px;
+  text-align: center;
+  color: #64748B;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.empty-list-note {
+  font-size: 12px;
+  color: #64748B;
+  text-align: center;
+  padding: 16px;
+  margin: 0;
+}
+
