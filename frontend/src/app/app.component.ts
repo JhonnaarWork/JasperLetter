@@ -27,10 +27,13 @@ import { SpellcheckService, SpellError } from './services/spellcheck.service';
 import {
   XmlDataAdapterModel,
   getDefaultXmlDataAdapterModel,
+  linkDataAdapterToJrxml,
+  normalizeXmlDataAdapterPath,
   parseXmlDataAdapter,
   serializeXmlDataAdapter,
   TestDataAdapterResponse
 } from './models/data-adapter.model';
+import { createStarterXmlData } from './models/xml-data.model';
 import { XmlCodeEditorComponent } from './components/xml-code-editor/xml-code-editor.component';
 import { CreateLetterModalComponent } from './components/create-letter-modal/create-letter-modal.component';
 import { environment } from '../environments/environment';
@@ -187,13 +190,6 @@ export class AppComponent implements OnInit, OnDestroy {
   readonly parameterEntries = computed(() => {
     const params = this.parameters();
     return Object.entries(params).map(([key, value]) => ({ key, value }));
-  });
-
-  // Información de la carta de resources seleccionada actualmente
-  readonly activeResourceInfo = computed(() => {
-    const id = this.selectedLetterId();
-    if (!id) return null;
-    return this.resourceLetters().find((l) => l.id === id) || null;
   });
 
   ngOnInit(): void {
@@ -747,40 +743,12 @@ export class AppComponent implements OnInit, OnDestroy {
   // VINCULACIÓN EN CASCADA ("PADRE - HIJO")
   // ==========================================================================
   linkDataAdapterToJrxml(adapterRelativePath: string): void {
-    const cleanPath = adapterRelativePath.replace(/\\/g, '/');
-    let content = this.jrxml();
-    if (!content) return;
-
-    if (content.includes('name="net.sf.jasperreports.data.adapter"')) {
-      content = content.replace(
-        /<property\s+name="net\.sf\.jasperreports\.data\.adapter"\s+value="[^"]*"\s*\/?>/,
-        `<property name="net.sf.jasperreports.data.adapter" value="${cleanPath}"/>`
-      );
-    } else {
-      content = content.replace(
-        /(<jasperReport\b[^>]*>)/,
-        `$1\n\t<property name="net.sf.jasperreports.data.adapter" value="${cleanPath}"/>`
-      );
-    }
-
-    if (content.includes('name="com.jaspersoft.studio.data.defaultdataadapter"')) {
-      content = content.replace(
-        /<property\s+name="com\.jaspersoft\.studio\.data\.defaultdataadapter"\s+value="[^"]*"\s*\/?>/,
-        `<property name="com.jaspersoft.studio.data.defaultdataadapter" value="${cleanPath}"/>`
-      );
-    } else {
-      content = content.replace(
-        /(<jasperReport\b[^>]*>)/,
-        `$1\n\t<property name="com.jaspersoft.studio.data.defaultdataadapter" value="${cleanPath}"/>`
-      );
-    }
-
-    this.jrxml.set(content);
+    if (!this.jrxml()) return;
+    this.jrxml.set(linkDataAdapterToJrxml(this.jrxml(), adapterRelativePath));
   }
 
   linkDataXmlToAdapter(xmlRelativePath: string): void {
-    const cleanPath = xmlRelativePath.replace(/\//g, '\\');
-    this.updateDataAdapterField('location', cleanPath);
+    this.updateDataAdapterField('location', normalizeXmlDataAdapterPath(xmlRelativePath));
   }
 
   // ==========================================================================
@@ -879,27 +847,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if (!fname.toLowerCase().endsWith('.xml')) fname += '.xml';
 
     this.loadingXmlFiles.set(true);
-    const starter =
-      `<?xml version="1.0" encoding="UTF-8"?>\n` +
-      `<content>\n` +
-      `\t<letterType>${letterId}</letterType>\n` +
-      `\t<letterContents>\n` +
-      `\t\t<letterTypeData>\n` +
-      `\t\t\t<letterData>\n` +
-      `\t\t\t\t<idLetterFormat>1001</idLetterFormat>\n` +
-      `\t\t\t\t<printDate>${new Date().toISOString().substring(0, 10)}</printDate>\n` +
-      `\t\t\t</letterData>\n` +
-      `\t\t\t<argumentList>\n` +
-      `\t\t\t\t<argumentData>\n` +
-      `\t\t\t\t\t<argumentName>LETTER_TYPE</argumentName>\n` +
-      `\t\t\t\t\t<argumentValue>${letterId}</argumentValue>\n` +
-      `\t\t\t\t</argumentData>\n` +
-      `\t\t\t</argumentList>\n` +
-      `\t\t</letterTypeData>\n` +
-      `\t</letterContents>\n` +
-      `\t<language>es</language>\n` +
-      `\t<extTemplate>${letterId}</extTemplate>\n` +
-      `</content>\n`;
+    const starter = createStarterXmlData(letterId);
 
     this.previewService.createDataXmlFile({
       letterId,

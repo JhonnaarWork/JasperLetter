@@ -113,6 +113,51 @@ export function serializeXmlDataAdapter(model: XmlDataAdapterModel): string {
 `;
 }
 
+/**
+ * Inserta o actualiza, dentro del JRXML, las dos propiedades que vinculan el reporte a un
+ * Data Adapter (net.sf.jasperreports.data.adapter y su equivalente de Jaspersoft Studio).
+ * Función pura: no depende de estado de componente, solo transforma el string de entrada.
+ */
+export function linkDataAdapterToJrxml(jrxml: string, adapterRelativePath: string): string {
+  if (!jrxml) return jrxml;
+  const cleanPath = adapterRelativePath.replace(/\\/g, '/');
+  let content = jrxml;
+
+  if (content.includes('name="net.sf.jasperreports.data.adapter"')) {
+    content = content.replace(
+      /<property\s+name="net\.sf\.jasperreports\.data\.adapter"\s+value="[^"]*"\s*\/?>/,
+      `<property name="net.sf.jasperreports.data.adapter" value="${cleanPath}"/>`
+    );
+  } else {
+    content = content.replace(
+      /(<jasperReport\b[^>]*>)/,
+      `$1\n\t<property name="net.sf.jasperreports.data.adapter" value="${cleanPath}"/>`
+    );
+  }
+
+  if (content.includes('name="com.jaspersoft.studio.data.defaultdataadapter"')) {
+    content = content.replace(
+      /<property\s+name="com\.jaspersoft\.studio\.data\.defaultdataadapter"\s+value="[^"]*"\s*\/?>/,
+      `<property name="com.jaspersoft.studio.data.defaultdataadapter" value="${cleanPath}"/>`
+    );
+  } else {
+    content = content.replace(
+      /(<jasperReport\b[^>]*>)/,
+      `$1\n\t<property name="com.jaspersoft.studio.data.defaultdataadapter" value="${cleanPath}"/>`
+    );
+  }
+
+  return content;
+}
+
+/**
+ * Normaliza una ruta relativa de archivo XML de datos al formato con backslashes usado por
+ * <location> en el Data Adapter (ej: "data/xml/X.xml" -> "data\\xml\\X.xml").
+ */
+export function normalizeXmlDataAdapterPath(xmlRelativePath: string): string {
+  return xmlRelativePath.replace(/\//g, '\\');
+}
+
 function escapeXml(unsafe: string): string {
   if (!unsafe) return '';
   return unsafe
