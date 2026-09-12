@@ -6,37 +6,20 @@ import {
   OnDestroy,
   OnInit,
   ViewChild,
-  computed,
   inject,
   signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { JasperEditorComponent } from '@florianrauscha/ngx-jrxml-editor';
-import { PreviewService } from './services/preview.service';
 import { I18nService, Language } from './services/i18n.service';
-import { LETTER_SAMPLES, LetterSample } from './models/samples';
-import {
-  LetterResourceInfo,
-  CreateLetterRequest,
-  DataAdapterOptionInfo,
-  DataFileInfo
-} from './models/letter-resource.model';
+import { CreateLetterRequest, DataAdapterOptionInfo, DataFileInfo } from './models/letter-resource.model';
 import { SpellcheckService, SpellError } from './services/spellcheck.service';
-import {
-  XmlDataAdapterModel,
-  getDefaultXmlDataAdapterModel,
-  linkDataAdapterToJrxml,
-  normalizeXmlDataAdapterPath,
-  parseXmlDataAdapter,
-  serializeXmlDataAdapter,
-  TestDataAdapterResponse
-} from './models/data-adapter.model';
-import { createStarterXmlData } from './models/xml-data.model';
+import { XmlDataAdapterModel } from './models/data-adapter.model';
 import { XmlCodeEditorComponent } from './components/xml-code-editor/xml-code-editor.component';
 import { CreateLetterModalComponent } from './components/create-letter-modal/create-letter-modal.component';
-import { environment } from '../environments/environment';
+import { LetterEditorStore } from './features/letter-editor/state/letter-editor.store';
+import { LetterCatalogService } from './features/letter-editor/state/letter-catalog.service';
 
 /**
  * Forma mínima del store interno de @florianrauscha/ngx-jrxml-editor que este componente
@@ -54,6 +37,19 @@ interface JasperEditorInternalStore {
   updateSelected(updater: (el: any) => any): void;
 }
 
+/**
+ * AppComponent es la "shell" de la aplicación: compone los paneles/modales y delega el estado
+ * de la carta actual a LetterEditorStore (features/letter-editor/state) y el catálogo de
+ * cartas a LetterCatalogService. Conserva directamente solo lo que es inherentemente de nivel
+ * de shell: atajos de teclado globales, el guard de navegación ante cambios sin guardar (que
+ * coordina entre "cambiar de carta" y "crear carta nueva"), el wiring del modal de crear
+ * carta, el modo de vista/pestañas, y el subsistema de doble-click para editar texto (que
+ * depende del ViewChild hacia el editor visual de terceros).
+ *
+ * Las señales de LetterEditorStore/LetterCatalogService se re-exponen bajo el mismo nombre de
+ * propiedad (ej. `readonly jrxml = this.letterEditor.jrxml`) para que el template siga
+ * leyéndolas exactamente igual que antes de la extracción.
+ */
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -67,6 +63,9 @@ export class AppComponent implements OnInit, OnDestroy {
   @ViewChild('modalTextarea') modalTextareaRef?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('backdropRef') backdropRef?: ElementRef<HTMLDivElement>;
 
+  private readonly letterEditor = inject(LetterEditorStore);
+  private readonly catalog = inject(LetterCatalogService);
+
   // Estado del modal de edición de texto
   readonly textModalOpen = signal<boolean>(false);
   readonly textModalKind = signal<'staticText' | 'textField'>('staticText');
@@ -79,8 +78,6 @@ export class AppComponent implements OnInit, OnDestroy {
   readonly backdropHtml = signal<string>('');
 
   readonly spellcheckService = inject(SpellcheckService);
-  private readonly previewService = inject(PreviewService);
-  private readonly sanitizer = inject(DomSanitizer);
   readonly i18n = inject(I18nService);
   readonly currentLang = this.i18n.currentLang;
 
@@ -92,47 +89,67 @@ export class AppComponent implements OnInit, OnDestroy {
     this.i18n.setLanguage(lang);
   }
 
-  // Muestras de ejemplo incorporadas
-  readonly samples = LETTER_SAMPLES;
+  // ---------- Alias de LetterCatalogService (mismo nombre que antes de la extracción) ----------
+  readonly resourceLetters = this.catalog.resourceLetters;
+  readonly backendOnline = this.catalog.backendOnline;
 
-  // Cartas descubiertas en el directorio resources/
-  readonly resourceLetters = signal<LetterResourceInfo[]>([]);
+  // ---------- Alias de LetterEditorStore (mismo nombre que antes de la extracción) ----------
+  readonly samples = this.letterEditor.samples;
+  readonly currentSelection = this.letterEditor.currentSelection;
+  readonly selectedLetterId = this.letterEditor.selectedLetterId;
+  readonly selectedSampleId = this.letterEditor.selectedSampleId;
+  readonly letterFormat = this.letterEditor.letterFormat;
+  readonly switchingLetter = this.letterEditor.switchingLetter;
+  readonly switchingMessage = this.letterEditor.switchingMessage;
 
-  // Selección actual en el selector ("resource:{id}" o "sample:{id}") - Inicialmente vacía
-  readonly currentSelection = signal<string>('');
-  readonly selectedLetterId = signal<string | null>(null);
-  readonly selectedSampleId = signal<string | null>(null);
+  readonly jrxml = this.letterEditor.jrxml;
+  readonly originalJrxml = this.letterEditor.originalJrxml;
+  readonly xmlData = this.letterEditor.xmlData;
+  readonly originalXmlData = this.letterEditor.originalXmlData;
+  readonly dataAdapter = this.letterEditor.dataAdapter;
+  readonly originalDataAdapter = this.letterEditor.originalDataAdapter;
+  readonly dataAdapterMode = this.letterEditor.dataAdapterMode;
+  readonly dataAdapterModel = this.letterEditor.dataAdapterModel;
+  readonly testingDataAdapter = this.letterEditor.testingDataAdapter;
+  readonly testResultModalOpen = this.letterEditor.testResultModalOpen;
+  readonly testResult = this.letterEditor.testResult;
+  readonly isDataAdapterConnected = this.letterEditor.isDataAdapterConnected;
+  readonly parameters = this.letterEditor.parameters;
 
-  // Formato objetivo de guardado (JR6 tradicional o JR7 moderno)
-  readonly letterFormat = signal<'JR6' | 'JR7'>('JR6');
+  readonly isJrxmlDirty = this.letterEditor.isJrxmlDirty;
+  readonly isDataAdapterDirty = this.letterEditor.isDataAdapterDirty;
+  readonly isXmlDataDirty = this.letterEditor.isXmlDataDirty;
+  readonly hasUnsavedChanges = this.letterEditor.hasUnsavedChanges;
+  readonly dirtyCount = this.letterEditor.dirtyCount;
 
-  // Estado del editor y reporte
-  readonly jrxml = signal<string>('');
-  readonly originalJrxml = signal<string>('');
-  readonly xmlData = signal<string>('');
-  readonly originalXmlData = signal<string>('');
-  readonly dataAdapter = signal<string>('');
-  readonly originalDataAdapter = signal<string>('');
-  readonly dataAdapterMode = signal<'form' | 'xml'>('form');
-  readonly dataAdapterModel = signal<XmlDataAdapterModel>(getDefaultXmlDataAdapterModel());
-  readonly testingDataAdapter = signal<boolean>(false);
-  readonly testResultModalOpen = signal<boolean>(false);
-  readonly testResult = signal<TestDataAdapterResponse | null>(null);
-  readonly isDataAdapterConnected = signal<boolean>(false);
-  readonly parameters = signal<Record<string, string>>({});
+  readonly saveConfirmModalOpen = this.letterEditor.saveConfirmModalOpen;
+  readonly saveSelectJrxml = this.letterEditor.saveSelectJrxml;
+  readonly saveSelectDataAdapter = this.letterEditor.saveSelectDataAdapter;
+  readonly saveSelectXmlData = this.letterEditor.saveSelectXmlData;
 
-  // Seguimiento de cambios sin guardar (Dirty State)
-  readonly isJrxmlDirty = computed(() => !!this.selectedLetterId() && this.jrxml() !== this.originalJrxml());
-  readonly isDataAdapterDirty = computed(() => !!this.selectedLetterId() && this.dataAdapter() !== this.originalDataAdapter());
-  readonly isXmlDataDirty = computed(() => !!this.selectedLetterId() && this.xmlData() !== this.originalXmlData());
-  readonly hasUnsavedChanges = computed(() => this.isJrxmlDirty() || this.isDataAdapterDirty() || this.isXmlDataDirty());
-  readonly dirtyCount = computed(() => (this.isJrxmlDirty() ? 1 : 0) + (this.isDataAdapterDirty() ? 1 : 0) + (this.isXmlDataDirty() ? 1 : 0));
+  readonly selectAdapterModalOpen = this.letterEditor.selectAdapterModalOpen;
+  readonly availableAdapters = this.letterEditor.availableAdapters;
+  readonly loadingAdapters = this.letterEditor.loadingAdapters;
 
-  // Indicador de cambio de carta (Spinner)
-  readonly switchingLetter = signal<boolean>(false);
-  readonly switchingMessage = signal<string>('');
+  readonly selectXmlDataModalOpen = this.letterEditor.selectXmlDataModalOpen;
+  readonly availableXmlFiles = this.letterEditor.availableXmlFiles;
+  readonly loadingXmlFiles = this.letterEditor.loadingXmlFiles;
+  readonly newXmlFileName = this.letterEditor.newXmlFileName;
+  readonly isCreatingNewXml = this.letterEditor.isCreatingNewXml;
 
-  // Modal: Crear Carta
+  readonly pdfUrl = this.letterEditor.pdfUrl;
+  readonly rawPdfBlob = this.letterEditor.rawPdfBlob;
+  readonly loading = this.letterEditor.loading;
+  readonly errorMessage = this.letterEditor.errorMessage;
+
+  readonly saving = this.letterEditor.saving;
+  readonly saveStatus = this.letterEditor.saveStatus;
+
+  readonly parameterEntries = this.letterEditor.parameterEntries;
+
+  // Indicador de cambio de carta (Spinner) — alias de letterEditor.switchingLetter/-Message ya declarados arriba
+
+  // Modal: Crear Carta (queda en AppComponent: es estado propio del modal, no del dominio de la carta)
   readonly createLetterModalOpen = signal<boolean>(false);
   readonly newLetterId = signal<string>('');
   readonly newLetterFormat = signal<'JR6' | 'JR7'>('JR6');
@@ -141,28 +158,11 @@ export class AppComponent implements OnInit, OnDestroy {
   readonly creatingLetter = signal<boolean>(false);
   readonly createLetterError = signal<string | null>(null);
 
-  // Modal: Confirmar Guardado Granular
-  readonly saveConfirmModalOpen = signal<boolean>(false);
-  readonly saveSelectJrxml = signal<boolean>(true);
-  readonly saveSelectDataAdapter = signal<boolean>(true);
-  readonly saveSelectXmlData = signal<boolean>(true);
-
-  // Modal: Cambios sin Guardar (Guard de Navegación)
+  // Modal: Cambios sin Guardar (Guard de Navegación) — coordina entre "cambiar de carta" y
+  // "crear carta nueva", por eso queda en el shell y no en una feature específica.
   readonly unsavedModalOpen = signal<boolean>(false);
   readonly pendingTargetSelection = signal<string | null>(null);
   readonly pendingAction = signal<'select' | 'create' | null>(null);
-
-  // Modal: Seleccionar Data Adapter existente
-  readonly selectAdapterModalOpen = signal<boolean>(false);
-  readonly availableAdapters = signal<DataAdapterOptionInfo[]>([]);
-  readonly loadingAdapters = signal<boolean>(false);
-
-  // Modal: Seleccionar o Crear Datos XML
-  readonly selectXmlDataModalOpen = signal<boolean>(false);
-  readonly availableXmlFiles = signal<DataFileInfo[]>([]);
-  readonly loadingXmlFiles = signal<boolean>(false);
-  readonly newXmlFileName = signal<string>('');
-  readonly isCreatingNewXml = signal<boolean>(false);
 
   // Pestaña activa en el panel izquierdo: 'editor' | 'jrxmlCode' | 'xmlData' | 'dataAdapter'
   readonly leftTab = signal<'editor' | 'xmlData' | 'jrxmlCode' | 'dataAdapter'>('editor');
@@ -171,26 +171,6 @@ export class AppComponent implements OnInit, OnDestroy {
   readonly viewMode = signal<'split' | 'editor' | 'preview'>('editor');
   // Pestaña derecha en modo dividido: 'preview' (PDF) o 'params' (Formulario de datos)
   readonly rightTab = signal<'preview' | 'params'>('preview');
-
-  // Estado del preview
-  readonly pdfUrl = signal<SafeResourceUrl | null>(null);
-  readonly rawPdfBlob = signal<Blob | null>(null);
-  readonly loading = signal<boolean>(false);
-  readonly errorMessage = signal<string | null>(null);
-  readonly backendOnline = signal<boolean>(false);
-
-  // Estado de guardado
-  readonly saving = signal<boolean>(false);
-  readonly saveStatus = signal<{ type: 'success' | 'error' | null; message: string | null }>({
-    type: null,
-    message: null
-  });
-
-  // Lista de parámetros computada como pares [clave, valor]
-  readonly parameterEntries = computed(() => {
-    const params = this.parameters();
-    return Object.entries(params).map(([key, value]) => ({ key, value }));
-  });
 
   ngOnInit(): void {
     this.checkHealth();
@@ -206,279 +186,138 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ---------- Delegados a LetterCatalogService ----------
   checkHealth(): void {
-    this.previewService.checkHealth().subscribe({
-      next: (res) => {
-        this.backendOnline.set(res.status === 'UP');
-      },
-      error: () => {
-        this.backendOnline.set(false);
-      }
-    });
+    this.catalog.checkHealth();
   }
 
   loadAvailableLetters(): void {
-    this.previewService.getAvailableLetters().subscribe({
-      next: (letters) => {
-        this.resourceLetters.set(letters);
-        this.backendOnline.set(true);
-        // Al entrar a la aplicación no seleccionamos ninguna carta automáticamente,
-        // mostrando el estado inicial de bienvenida
-      },
-      error: () => {
-        this.backendOnline.set(false);
-      }
-    });
+    this.catalog.loadAvailableLetters();
   }
 
+  // ---------- Delegados a LetterEditorStore ----------
   onSelectionChange(val: string): void {
-    this.currentSelection.set(val);
-    if (!val) {
-      this.selectedLetterId.set(null);
-      this.selectedSampleId.set(null);
-      this.jrxml.set('');
-      this.originalJrxml.set('');
-      this.xmlData.set('');
-      this.originalXmlData.set('');
-      this.dataAdapter.set('');
-      this.originalDataAdapter.set('');
-      this.pdfUrl.set(null);
-      return;
-    }
-    if (val.startsWith('resource:')) {
-      const letterId = val.substring('resource:'.length);
-      this.loadLetterFromResource(letterId);
-    } else if (val.startsWith('sample:')) {
-      const sampleId = val.substring('sample:'.length);
-      this.loadSample(sampleId);
-    }
+    this.letterEditor.onSelectionChange(val);
   }
 
   loadLetterFromResource(letterId: string): void {
-    this.loading.set(true);
-    this.switchingLetter.set(true);
-    this.switchingMessage.set(`Cargando carta ${letterId}...`);
-    this.errorMessage.set(null);
-    this.saveStatus.set({ type: null, message: null });
-
-    this.previewService.getLetterDetail(letterId).subscribe({
-      next: (detail) => {
-        this.selectedLetterId.set(detail.id);
-        this.selectedSampleId.set(null);
-        this.letterFormat.set(detail.detectedFormat || (detail as any).format || 'JR6');
-        this.jrxml.set(detail.jrxml);
-        this.originalJrxml.set(detail.jrxml);
-        this.xmlData.set(detail.xmlData || '');
-        this.originalXmlData.set(detail.xmlData || '');
-        const adapterXml = detail.dataAdapter || '';
-        this.dataAdapter.set(adapterXml);
-        this.originalDataAdapter.set(adapterXml);
-        this.dataAdapterModel.set(parseXmlDataAdapter(adapterXml, detail.id));
-        this.isDataAdapterConnected.set(!!detail.dataAdapterConnected);
-        this.parameters.set({});
-        this.generatePreview();
-        this.switchingLetter.set(false);
-      },
-      error: (err) => {
-        this.loading.set(false);
-        this.switchingLetter.set(false);
-        this.errorMessage.set(
-          this.t('toast.loadError', letterId, err.error?.message || err.message)
-        );
-      }
-    });
+    this.letterEditor.loadLetterFromResource(letterId);
   }
 
   loadSample(sampleId: string): void {
-    const sample = this.samples.find((s) => s.id === sampleId);
-    if (!sample) return;
-
-    this.selectedLetterId.set(null);
-    this.selectedSampleId.set(sampleId);
-    this.letterFormat.set('JR7');
-    this.jrxml.set(sample.jrxml);
-    this.originalJrxml.set(sample.jrxml);
-    this.xmlData.set('');
-    this.originalXmlData.set('');
-    this.dataAdapter.set('');
-    this.originalDataAdapter.set('');
-    this.dataAdapterModel.set(getDefaultXmlDataAdapterModel());
-    this.isDataAdapterConnected.set(false);
-    this.parameters.set({ ...sample.defaultParameters });
-    this.saveStatus.set({ type: null, message: null });
-    this.generatePreview();
+    this.letterEditor.loadSample(sampleId);
   }
 
   onJrxmlChange(newXml: string): void {
-    this.jrxml.set(newXml);
+    this.letterEditor.onJrxmlChange(newXml);
   }
 
   onXmlDataChange(newXml: string): void {
-    this.xmlData.set(newXml);
+    this.letterEditor.onXmlDataChange(newXml);
   }
 
   resetXmlData(): void {
-    if (this.originalXmlData()) {
-      this.xmlData.set(this.originalXmlData());
-    } else if (this.selectedLetterId()) {
-      this.reloadXmlDataFromLetter(this.selectedLetterId()!);
-    }
+    this.letterEditor.resetXmlData();
   }
 
   reloadXmlDataFromLetter(letterId: string): void {
-    this.previewService.getLetterDetail(letterId).subscribe({
-      next: (detail) => {
-        if (detail.xmlData) {
-          this.xmlData.set(detail.xmlData);
-          this.originalXmlData.set(detail.xmlData);
-        }
-        if (detail.dataAdapterConnected !== undefined) {
-          this.isDataAdapterConnected.set(detail.dataAdapterConnected);
-        }
-      },
-      error: () => {}
-    });
+    this.letterEditor.reloadXmlDataFromLetter(letterId);
   }
 
   setDataAdapterMode(mode: 'form' | 'xml'): void {
-    if (mode === 'form') {
-      const parsed = parseXmlDataAdapter(this.dataAdapter(), this.selectedLetterId() || undefined);
-      this.dataAdapterModel.set(parsed);
-    } else {
-      const xml = serializeXmlDataAdapter(this.dataAdapterModel());
-      this.dataAdapter.set(xml);
-    }
-    this.dataAdapterMode.set(mode);
+    this.letterEditor.setDataAdapterMode(mode);
   }
 
   updateDataAdapterField<K extends keyof XmlDataAdapterModel>(field: K, value: XmlDataAdapterModel[K]): void {
-    const updated = { ...this.dataAdapterModel(), [field]: value };
-    this.dataAdapterModel.set(updated);
-    const xml = serializeXmlDataAdapter(updated);
-    this.dataAdapter.set(xml);
+    this.letterEditor.updateDataAdapterField(field, value);
   }
 
   suggestStandardXmlPath(): void {
-    const letterId = this.selectedLetterId();
-    if (!letterId) return;
-    const path = `src\\main\\resources\\data\\xml\\${letterId}.xml`;
-    this.updateDataAdapterField('location', path);
+    this.letterEditor.suggestStandardXmlPath();
   }
 
   onDataAdapterChange(newData: string): void {
-    this.dataAdapter.set(newData);
-    try {
-      const parsed = parseXmlDataAdapter(newData, this.selectedLetterId() || undefined);
-      this.dataAdapterModel.set(parsed);
-    } catch {}
+    this.letterEditor.onDataAdapterChange(newData);
   }
 
   resetDataAdapter(): void {
-    const original = this.originalDataAdapter();
-    this.dataAdapter.set(original);
-    this.dataAdapterModel.set(parseXmlDataAdapter(original, this.selectedLetterId() || undefined));
+    this.letterEditor.resetDataAdapter();
   }
 
   runDataAdapterTest(): void {
-    const xml = this.dataAdapterMode() === 'form'
-      ? serializeXmlDataAdapter(this.dataAdapterModel())
-      : this.dataAdapter();
-
-    this.testingDataAdapter.set(true);
-    this.previewService.testDataAdapter({
-      letterId: this.selectedLetterId() || undefined,
-      dataAdapterXml: xml
-    }).subscribe({
-      next: (res) => {
-        this.testingDataAdapter.set(false);
-        this.testResult.set(res);
-        this.testResultModalOpen.set(true);
-        this.isDataAdapterConnected.set(!!res.success);
-        if (res.xmlContent) {
-          this.xmlData.set(res.xmlContent);
-          this.originalXmlData.set(res.xmlContent);
-        }
-      },
-      error: (err) => {
-        this.testingDataAdapter.set(false);
-        this.testResult.set({
-          success: false,
-          status: 'ERROR',
-          message: err.error?.message || err.message,
-          fileExists: false,
-          fileSizeBytes: 0,
-          xmlValid: false,
-          xpathMatches: 0
-        });
-        this.testResultModalOpen.set(true);
-        this.isDataAdapterConnected.set(false);
-      }
-    });
+    this.letterEditor.runDataAdapterTest();
   }
 
   closeTestModal(): void {
-    this.testResultModalOpen.set(false);
+    this.letterEditor.closeTestModal();
   }
 
   onParameterChange(key: string, value: string): void {
-    const current = { ...this.parameters(), [key]: value };
-    this.parameters.set(current);
+    this.letterEditor.onParameterChange(key, value);
   }
 
   addCustomParameter(key: string, value: string): void {
-    if (!key || !key.trim()) return;
-    const cleanKey = key.trim().toUpperCase().replace(/\s+/g, '_');
-    this.parameters.set({ ...this.parameters(), [cleanKey]: value });
+    this.letterEditor.addCustomParameter(key, value);
   }
 
   removeParameter(key: string): void {
-    const updated = { ...this.parameters() };
-    delete updated[key];
-    this.parameters.set(updated);
+    this.letterEditor.removeParameter(key);
   }
 
   generatePreview(): void {
-    this.loading.set(true);
-    this.errorMessage.set(null);
+    this.letterEditor.generatePreview();
+  }
 
-    const letterId = this.selectedLetterId() || undefined;
-    const xmlData = this.xmlData() || undefined;
+  linkDataAdapterToJrxml(adapterRelativePath: string): void {
+    this.letterEditor.linkDataAdapterToJrxml(adapterRelativePath);
+  }
 
-    this.previewService
-      .generatePdf(this.jrxml(), this.parameters(), letterId, xmlData)
-      .subscribe({
-        next: (blob: Blob) => {
-          this.rawPdfBlob.set(blob);
-          const objectUrl = URL.createObjectURL(blob);
-          this.pdfUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(objectUrl));
-          this.backendOnline.set(true);
-          this.loading.set(false);
-        },
-        error: (err) => {
-          this.loading.set(false);
-          if (err.status === 0) {
-            this.backendOnline.set(false);
-            this.errorMessage.set(this.t('preview.errorConnection', environment.apiBaseUrl || window.location.origin));
-          } else {
-            if (err.error instanceof Blob) {
-              const reader = new FileReader();
-              reader.onload = () => {
-                try {
-                  const parsed = JSON.parse(reader.result as string);
-                  this.errorMessage.set(
-                    parsed.cause || parsed.message || this.t('preview.errorGeneric')
-                  );
-                } catch {
-                  this.errorMessage.set(this.t('preview.errorTemplate'));
-                }
-              };
-              reader.readAsText(err.error);
-            } else {
-              this.errorMessage.set(err.message || this.t('preview.errorGeneric'));
-            }
-          }
-        }
-      });
+  linkDataXmlToAdapter(xmlRelativePath: string): void {
+    this.letterEditor.linkDataXmlToAdapter(xmlRelativePath);
+  }
+
+  openSelectAdapterModal(): void {
+    this.letterEditor.openSelectAdapterModal();
+  }
+
+  closeSelectAdapterModal(): void {
+    this.letterEditor.closeSelectAdapterModal();
+  }
+
+  selectExistingAdapter(adapter: DataAdapterOptionInfo): void {
+    this.letterEditor.selectExistingAdapter(adapter);
+  }
+
+  createNewAdapterForCurrentLetter(): void {
+    this.letterEditor.createNewAdapterForCurrentLetter();
+  }
+
+  openSelectXmlDataModal(): void {
+    this.letterEditor.openSelectXmlDataModal();
+  }
+
+  closeSelectXmlDataModal(): void {
+    this.letterEditor.closeSelectXmlDataModal();
+  }
+
+  selectExistingXmlData(file: DataFileInfo): void {
+    this.letterEditor.selectExistingXmlData(file);
+  }
+
+  submitCreateXmlData(): void {
+    this.letterEditor.submitCreateXmlData();
+  }
+
+  openSaveConfirmModal(scope?: 'jrxml' | 'dataAdapter' | 'xmlData'): void {
+    this.letterEditor.openSaveConfirmModal(scope);
+  }
+
+  closeSaveConfirmModal(): void {
+    this.letterEditor.closeSaveConfirmModal();
+  }
+
+  confirmGranularSave(): void {
+    void this.letterEditor.saveGranular();
   }
 
   // Atajo de teclado global Ctrl+S / Cmd+S
@@ -499,117 +338,6 @@ export class AppComponent implements OnInit, OnDestroy {
       event.preventDefault();
       event.returnValue = '';
     }
-  }
-
-  // ==========================================================================
-  // GESTIÓN DE GUARDADO GRANULAR Y MODAL DE CONFIRMACIÓN
-  // ==========================================================================
-  openSaveConfirmModal(scope?: 'jrxml' | 'dataAdapter' | 'xmlData'): void {
-    if (!this.selectedLetterId()) return;
-
-    if (scope === 'jrxml') {
-      this.saveSelectJrxml.set(true);
-      this.saveSelectDataAdapter.set(false);
-      this.saveSelectXmlData.set(false);
-    } else if (scope === 'dataAdapter') {
-      this.saveSelectJrxml.set(false);
-      this.saveSelectDataAdapter.set(true);
-      this.saveSelectXmlData.set(false);
-    } else if (scope === 'xmlData') {
-      this.saveSelectJrxml.set(false);
-      this.saveSelectDataAdapter.set(false);
-      this.saveSelectXmlData.set(true);
-    } else {
-      const anyDirty = this.hasUnsavedChanges();
-      this.saveSelectJrxml.set(anyDirty ? this.isJrxmlDirty() : true);
-      this.saveSelectDataAdapter.set(anyDirty ? this.isDataAdapterDirty() : !!this.dataAdapter());
-      this.saveSelectXmlData.set(anyDirty ? this.isXmlDataDirty() : !!this.xmlData());
-    }
-
-    this.saveConfirmModalOpen.set(true);
-  }
-
-  closeSaveConfirmModal(): void {
-    this.saveConfirmModalOpen.set(false);
-  }
-
-  confirmGranularSave(onSuccessCallback?: () => void): void {
-    const letterId = this.selectedLetterId();
-    if (!letterId) return;
-
-    const doJrxml = this.saveSelectJrxml();
-    const doAdapter = this.saveSelectDataAdapter();
-    const doXml = this.saveSelectXmlData();
-
-    if (!doJrxml && !doAdapter && !doXml) {
-      this.closeSaveConfirmModal();
-      return;
-    }
-
-    this.saving.set(true);
-    this.saveStatus.set({ type: null, message: null });
-
-    this.previewService
-      .saveLetter(letterId, {
-        jrxml: doJrxml ? this.jrxml() : undefined,
-        saveJrxml: doJrxml,
-        xmlData: doXml ? (this.xmlData() || '') : undefined,
-        saveXmlData: doXml,
-        dataAdapter: doAdapter ? (this.dataAdapter() || '') : undefined,
-        saveDataAdapter: doAdapter,
-        format: this.letterFormat()
-      })
-      .subscribe({
-        next: (res) => {
-          this.saving.set(false);
-          this.closeSaveConfirmModal();
-
-          if (doJrxml) {
-            this.originalJrxml.set(this.jrxml());
-          }
-          if (doAdapter) {
-            this.originalDataAdapter.set(this.dataAdapter());
-          }
-          if (doXml) {
-            this.originalXmlData.set(this.xmlData());
-          }
-
-          if (res.dataAdapterConnected !== undefined) {
-            this.isDataAdapterConnected.set(res.dataAdapterConnected);
-          }
-          if (res.xmlData && doXml) {
-            this.xmlData.set(res.xmlData);
-            this.originalXmlData.set(res.xmlData);
-          }
-
-          const parts: string[] = [];
-          if (doJrxml) parts.push('Plantilla JRXML');
-          if (doAdapter) parts.push('Data Adapter');
-          if (doXml) parts.push('Datos XML');
-
-          this.saveStatus.set({
-            type: 'success',
-            message: `Guardado exitoso de: ${parts.join(', ')} para ${letterId}.`
-          });
-
-          setTimeout(() => {
-            if (this.saveStatus().type === 'success') {
-              this.saveStatus.set({ type: null, message: null });
-            }
-          }, 4000);
-
-          if (onSuccessCallback) {
-            onSuccessCallback();
-          }
-        },
-        error: (err) => {
-          this.saving.set(false);
-          this.saveStatus.set({
-            type: 'error',
-            message: this.t('toast.saveError', err.error?.message || err.message)
-          });
-        }
-      });
   }
 
   // ==========================================================================
@@ -637,7 +365,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.openCreateLetterModal();
   }
 
-  submitCreateLetter(): void {
+  async submitCreateLetter(): Promise<void> {
     const rawId = this.newLetterId();
     if (!rawId || !rawId.trim()) {
       this.createLetterError.set('Debes ingresar un código/identificador para la carta.');
@@ -660,24 +388,14 @@ export class AppComponent implements OnInit, OnDestroy {
       createXmlData: this.newLetterCreateXml()
     };
 
-    this.previewService.createLetter(req).subscribe({
-      next: (detail) => {
-        this.creatingLetter.set(false);
-        this.closeCreateLetterModal();
-        // Recargar cartas disponibles y abrir la recién creada
-        this.previewService.getAvailableLetters().subscribe({
-          next: (letters) => {
-            this.resourceLetters.set(letters);
-            this.currentSelection.set(`resource:${cleanId}`);
-            this.loadLetterFromResource(cleanId);
-          }
-        });
-      },
-      error: (err) => {
-        this.creatingLetter.set(false);
-        this.createLetterError.set(err.error?.message || err.message || 'Error al crear la carta en disco.');
-      }
-    });
+    try {
+      await this.letterEditor.createLetter(req);
+      this.creatingLetter.set(false);
+      this.closeCreateLetterModal();
+    } catch (err: any) {
+      this.creatingLetter.set(false);
+      this.createLetterError.set(err.error?.message || err.message || 'Error al crear la carta en disco.');
+    }
   }
 
   // ==========================================================================
@@ -694,7 +412,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.onSelectionChange(val);
   }
 
-  resolveUnsavedModal(action: 'save' | 'discard' | 'cancel'): void {
+  async resolveUnsavedModal(action: 'save' | 'discard' | 'cancel'): Promise<void> {
     if (action === 'cancel') {
       this.unsavedModalOpen.set(false);
       this.pendingTargetSelection.set(null);
@@ -729,146 +447,16 @@ export class AppComponent implements OnInit, OnDestroy {
       this.saveSelectDataAdapter.set(this.isDataAdapterDirty());
       this.saveSelectXmlData.set(this.isXmlDataDirty());
 
-      this.confirmGranularSave(() => {
+      const success = await this.letterEditor.saveGranular();
+      if (success) {
         if (pAction === 'create') {
           this.openCreateLetterModal();
         } else if (target !== null) {
           this.onSelectionChange(target);
         }
-      });
+      }
     }
   }
-
-  // ==========================================================================
-  // VINCULACIÓN EN CASCADA ("PADRE - HIJO")
-  // ==========================================================================
-  linkDataAdapterToJrxml(adapterRelativePath: string): void {
-    if (!this.jrxml()) return;
-    this.jrxml.set(linkDataAdapterToJrxml(this.jrxml(), adapterRelativePath));
-  }
-
-  linkDataXmlToAdapter(xmlRelativePath: string): void {
-    this.updateDataAdapterField('location', normalizeXmlDataAdapterPath(xmlRelativePath));
-  }
-
-  // ==========================================================================
-  // GESTIÓN Y ASIGNACIÓN DE DATA ADAPTER
-  // ==========================================================================
-  openSelectAdapterModal(): void {
-    this.loadingAdapters.set(true);
-    this.selectAdapterModalOpen.set(true);
-    this.previewService.getDataAdapters().subscribe({
-      next: (adapters) => {
-        this.availableAdapters.set(adapters);
-        this.loadingAdapters.set(false);
-      },
-      error: () => {
-        this.loadingAdapters.set(false);
-      }
-    });
-  }
-
-  closeSelectAdapterModal(): void {
-    this.selectAdapterModalOpen.set(false);
-  }
-
-  selectExistingAdapter(adapter: DataAdapterOptionInfo): void {
-    this.linkDataAdapterToJrxml(adapter.relativePath);
-    const model: XmlDataAdapterModel = {
-      ...getDefaultXmlDataAdapterModel(),
-      name: adapter.name,
-      location: adapter.location || ''
-    };
-    const newAdapterXml = serializeXmlDataAdapter(model);
-
-    this.dataAdapter.set(newAdapterXml);
-    this.dataAdapterModel.set(model);
-    this.closeSelectAdapterModal();
-    if (adapter.location && this.selectedLetterId()) {
-      this.reloadXmlDataFromLetter(this.selectedLetterId()!);
-    }
-  }
-
-  createNewAdapterForCurrentLetter(): void {
-    const letterId = this.selectedLetterId();
-    if (!letterId) return;
-
-    // Convención de ruta usada en el resto del flujo (relativa a la raíz del workspace),
-    // distinta del "src\main\resources\..." que trae getDefaultXmlDataAdapterModel() por defecto.
-    const xmlLocation = `resources\\data\\xml\\${letterId}.xml`;
-    const model: XmlDataAdapterModel = { ...getDefaultXmlDataAdapterModel(letterId), location: xmlLocation };
-    const newAdapterXml = serializeXmlDataAdapter(model);
-
-    this.dataAdapter.set(newAdapterXml);
-    this.dataAdapterModel.set(model);
-    this.linkDataAdapterToJrxml('xmlDataAdapter.xml');
-    this.linkDataXmlToAdapter(xmlLocation);
-    this.reloadXmlDataFromLetter(letterId);
-  }
-
-  // ==========================================================================
-  // GESTIÓN Y ASIGNACIÓN DE DATOS XML
-  // ==========================================================================
-  openSelectXmlDataModal(): void {
-    this.loadingXmlFiles.set(true);
-    this.selectXmlDataModalOpen.set(true);
-    this.newXmlFileName.set(this.selectedLetterId() ? `${this.selectedLetterId()}.xml` : 'data.xml');
-    this.isCreatingNewXml.set(false);
-
-    this.previewService.getDataXmlFiles().subscribe({
-      next: (files) => {
-        this.availableXmlFiles.set(files);
-        this.loadingXmlFiles.set(false);
-      },
-      error: () => {
-        this.loadingXmlFiles.set(false);
-      }
-    });
-  }
-
-  closeSelectXmlDataModal(): void {
-    this.selectXmlDataModalOpen.set(false);
-  }
-
-  selectExistingXmlData(file: DataFileInfo): void {
-    this.linkDataXmlToAdapter(file.relativePath);
-    this.closeSelectXmlDataModal();
-    if (this.selectedLetterId()) {
-      this.reloadXmlDataFromLetter(this.selectedLetterId()!);
-    }
-  }
-
-  submitCreateXmlData(): void {
-    const letterId = this.selectedLetterId();
-    if (!letterId) return;
-
-    let fname = this.newXmlFileName().trim();
-    if (!fname) fname = `${letterId}.xml`;
-    if (!fname.toLowerCase().endsWith('.xml')) fname += '.xml';
-
-    this.loadingXmlFiles.set(true);
-    const starter = createStarterXmlData(letterId);
-
-    this.previewService.createDataXmlFile({
-      letterId,
-      fileName: fname,
-      content: starter
-    }).subscribe({
-      next: (created) => {
-        this.loadingXmlFiles.set(false);
-        this.closeSelectXmlDataModal();
-        this.linkDataXmlToAdapter(created.relativePath);
-        this.xmlData.set(starter);
-        this.originalXmlData.set(starter);
-        this.isDataAdapterConnected.set(true);
-      },
-      error: (err) => {
-        this.loadingXmlFiles.set(false);
-        alert(err.error?.message || 'Error al crear archivo de datos XML');
-      }
-    });
-  }
-
 
   setViewMode(mode: 'split' | 'editor' | 'preview'): void {
     this.viewMode.set(mode);
