@@ -2,6 +2,18 @@
    viven en styles.css global porque se comparten con las pestañas de JRXML/Datos XML que
    siguen en AppComponent. */
 
+/* Sin esto, <app-data-adapter-panel> (un elemento personalizado sin estilos propios) se
+   dimensiona según su propio contenido en vez de ocupar el espacio disponible en .editor-pane
+   — como .editor-pane recorta con overflow:hidden (no auto), el excedente quedaba invisible
+   sin ningún scroll posible en vez de scrollear dentro de .da-form-wrapper. */
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .da-container {
   display: flex;
   flex-direction: column;

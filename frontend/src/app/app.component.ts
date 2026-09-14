@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostListener, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { I18nService, Language } from './services/i18n.service';
@@ -150,6 +150,15 @@ export class AppComponent implements OnInit {
   readonly viewMode = signal<'split' | 'editor' | 'preview'>('editor');
   // Pestaña derecha en modo dividido: 'preview' (PDF) o 'params' (Formulario de datos)
   readonly rightTab = signal<'preview' | 'params'>('preview');
+
+  // Ancho del panel izquierdo en pantalla dividida, como % de .app-main (el derecho ocupa el resto)
+  private static readonly SPLIT_DEFAULT_PERCENT = 50;
+  private static readonly SPLIT_MIN_PERCENT = 20;
+  private static readonly SPLIT_MAX_PERCENT = 80;
+  readonly splitEditorPercent = signal<number>(AppComponent.SPLIT_DEFAULT_PERCENT);
+  private resizingSplit = false;
+
+  @ViewChild('appMain') appMainRef?: ElementRef<HTMLElement>;
 
   ngOnInit(): void {
     this.checkHealth();
@@ -402,6 +411,41 @@ export class AppComponent implements OnInit {
 
   setViewMode(mode: 'split' | 'editor' | 'preview'): void {
     this.viewMode.set(mode);
+  }
+
+  // ==========================================================================
+  // DIVISOR ARRASTRABLE DE PANTALLA DIVIDIDA
+  // ==========================================================================
+  startSplitResize(event: MouseEvent): void {
+    event.preventDefault();
+    this.resizingSplit = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }
+
+  resetSplitResize(): void {
+    this.splitEditorPercent.set(AppComponent.SPLIT_DEFAULT_PERCENT);
+  }
+
+  @HostListener('window:mousemove', ['$event'])
+  handleSplitResizeMove(event: MouseEvent): void {
+    if (!this.resizingSplit) return;
+    const rect = this.appMainRef?.nativeElement.getBoundingClientRect();
+    if (!rect || rect.width === 0) return;
+    const rawPercent = ((event.clientX - rect.left) / rect.width) * 100;
+    const clamped = Math.min(
+      AppComponent.SPLIT_MAX_PERCENT,
+      Math.max(AppComponent.SPLIT_MIN_PERCENT, rawPercent)
+    );
+    this.splitEditorPercent.set(clamped);
+  }
+
+  @HostListener('window:mouseup')
+  handleSplitResizeEnd(): void {
+    if (!this.resizingSplit) return;
+    this.resizingSplit = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
   }
 
   onPreviewClick(): void {

@@ -558,6 +558,16 @@ lib-jasper-toolbar .zoom + .sep {
   gap: 2px;
   height: 100%;
   align-items: flex-end;
+  /* min-width:0 vence el "min-width:auto" por defecto de todo ítem flex, que si no impide
+     encogerse por debajo del ancho natural de los botones — sin esto, en pantalla dividida
+     (donde .editor-pane se angosta) las pestañas empujaban el ancho de .pane-header-tabs más
+     allá de lo disponible y, como los ancestros recortan con overflow:hidden, quedaban
+     invisibles sin ningún scroll posible. Con overflow-x:auto, el propio grupo de pestañas
+     scrollea cuando no caben en vez de desbordar a sus contenedores. */
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
 }
 
 .left-tab-btn,

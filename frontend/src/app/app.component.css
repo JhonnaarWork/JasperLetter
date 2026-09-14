@@ -88,12 +88,45 @@
 }
 
 .app-main.mode-split .editor-pane {
-  flex: 1;
-  border-right: 1px solid #D5DCE0;
+  /* Ancho controlado por el divisor arrastrable (.split-resizer) vía la variable CSS
+     --split-editor-pct fijada en .app-main; el panel de vista previa no necesita ajuste
+     porque sigue en flex:1 y ocupa lo que sobra. flex-shrink:0 evita que el navegador lo
+     encoja por su cuenta cuando --split-editor-pct deja poco espacio al otro lado. */
+  flex: 0 0 var(--split-editor-pct, 50%);
 }
 
 /* .app-main.mode-split .preview-pane, .app-main.mode-preview .preview-pane: movidas a
    styles.css (cruzan el límite de PreviewPaneComponent). */
+
+.split-resizer {
+  flex-shrink: 0;
+  width: 7px;
+  margin: 0 -3px;
+  position: relative;
+  z-index: 10;
+  cursor: col-resize;
+  background: transparent;
+}
+
+.split-resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 1px;
+  background: #D5DCE0;
+  transition: background-color 0.15s ease;
+}
+
+.split-resizer:hover::after,
+.split-resizer:focus-visible::after {
+  background: #2E6C99;
+}
+
+.split-resizer:focus-visible {
+  outline: none;
+}
 
 .app-main.mode-editor .editor-pane {
   flex: 1;
@@ -140,6 +173,9 @@
 .left-tab-meta {
   display: flex;
   align-items: center;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .file-path-badge {
@@ -150,6 +186,11 @@
   border-radius: 3px;
   border: 1px solid #D5DCE0;
   font-family: monospace;
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* .editor-host y lib-jasper-editor: movidos a visual-editor-pane.component.css. Como

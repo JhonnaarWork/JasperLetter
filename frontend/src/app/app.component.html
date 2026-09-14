@@ -46,7 +46,13 @@
   }
 
   <!-- Contenido principal -->
-  <main class="app-main" [class]="'mode-' + viewMode()" [class.main-welcome]="!selectedLetterId() && !selectedSampleId()">
+  <main
+    #appMain
+    class="app-main"
+    [class]="'mode-' + viewMode()"
+    [class.main-welcome]="!selectedLetterId() && !selectedSampleId()"
+    [style.--split-editor-pct]="viewMode() === 'split' ? splitEditorPercent() + '%' : null"
+  >
     @if (!selectedLetterId() && !selectedSampleId()) {
       <app-welcome-screen
         [resourceLetters]="resourceLetters()"
@@ -226,6 +232,20 @@
           <app-data-adapter-panel />
         }
       </section>
+    }
+
+    <!-- Divisor arrastrable entre el editor y la vista previa (solo en pantalla dividida) -->
+    @if (viewMode() === 'split') {
+      <div
+        class="split-resizer"
+        (mousedown)="startSplitResize($event)"
+        (dblclick)="resetSplitResize()"
+        role="separator"
+        aria-orientation="vertical"
+        [attr.aria-valuenow]="splitEditorPercent()"
+        [title]="t('header.splitResizerTooltip')"
+        tabindex="0"
+      ></div>
     }
 
     <!-- Panel Derecho: Previsualizador PDF y Datos de Prueba -->
