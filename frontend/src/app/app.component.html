@@ -167,7 +167,11 @@
         <!-- Vista 1: Editor Visual ngx-jrxml-editor (hospedado en su propio componente, junto
              con el modal de edición de texto/expresión con doble-click) -->
         @if (leftTab() === 'editor') {
-          <app-visual-editor-pane [jrxml]="jrxml()" (jrxmlChange)="onJrxmlChange($event)" />
+          <app-visual-editor-pane
+            [jrxml]="jrxml()"
+            (jrxmlChange)="onJrxmlChange($event)"
+            (jrxmlBaselineSync)="onJrxmlBaselineSync($event)"
+          />
         }
 
         <!-- Vista 2: Editor de Datos XML de la Carta -->

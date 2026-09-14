@@ -3,9 +3,11 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnChanges,
   OnDestroy,
   OnInit,
   Output,
+  SimpleChanges,
   ViewChild,
   signal
 } from '@angular/core';
@@ -43,9 +45,18 @@ interface JasperEditorInternalStore {
   styleUrls: ['./visual-editor-pane.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class VisualEditorPaneComponent implements OnInit, OnDestroy {
+export class VisualEditorPaneComponent implements OnInit, OnChanges, OnDestroy {
   @Input({ required: true }) jrxml = '';
   @Output() jrxmlChange = new EventEmitter<string>();
+
+  /**
+   * Se emite en vez de jrxmlChange cuando el jrxmlChange entrante del editor de terceros es
+   * el eco de re-serializado que dispara internamente al recibir un @Input jrxml distinto al
+   * que ya tenía (típicamente al cambiar de carta), no una edición real del usuario. El padre
+   * debe usar este valor para resincronizar tanto el contenido como el "original" (baseline),
+   * de forma que no se marque la carta como con cambios sin guardar solo por reabrirla.
+   */
+  @Output() jrxmlBaselineSync = new EventEmitter<string>();
 
   @ViewChild('editorComp') editorComp?: JasperEditorComponent;
 
@@ -54,6 +65,26 @@ export class VisualEditorPaneComponent implements OnInit, OnDestroy {
   readonly textModalContent = signal('');
 
   private activeEditingPath: any = null;
+
+  /** true tras el primer @Input jrxml recibido: el editor de terceros nunca emite eco en su
+   *  primerísima carga (su propio guard interno "initial"), así que no hay nada que esperar. */
+  private hasReceivedFirstJrxml = false;
+  /** armado cuando el padre nos empuja un jrxml distinto al que ya teníamos (p.ej. al cambiar
+   *  de carta): el próximo jrxmlChange que llegue del editor es el eco de re-serializado de
+   *  ESE valor, no una edición real, y se redirige a jrxmlBaselineSync en vez de jrxmlChange. */
+  private expectBaselineEcho = false;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    const change = changes['jrxml'];
+    if (!change) return;
+    if (!this.hasReceivedFirstJrxml) {
+      this.hasReceivedFirstJrxml = true;
+      return;
+    }
+    if (change.currentValue !== change.previousValue) {
+      this.expectBaselineEcho = true;
+    }
+  }
 
   ngOnInit(): void {
     if (typeof document !== 'undefined') {
@@ -68,6 +99,11 @@ export class VisualEditorPaneComponent implements OnInit, OnDestroy {
   }
 
   onJrxmlChange(newXml: string): void {
+    if (this.expectBaselineEcho) {
+      this.expectBaselineEcho = false;
+      this.jrxmlBaselineSync.emit(newXml);
+      return;
+    }
     this.jrxmlChange.emit(newXml);
   }
 

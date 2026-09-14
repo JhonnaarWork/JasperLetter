@@ -191,6 +191,10 @@ export class AppComponent implements OnInit {
     this.letterEditor.onJrxmlChange(newXml);
   }
 
+  onJrxmlBaselineSync(newXml: string): void {
+    this.letterEditor.onJrxmlBaselineSync(newXml);
+  }
+
   onXmlDataChange(newXml: string): void {
     this.letterEditor.onXmlDataChange(newXml);
   }

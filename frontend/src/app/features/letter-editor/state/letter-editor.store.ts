@@ -187,6 +187,17 @@ export class LetterEditorStore {
     this.jrxml.set(newXml);
   }
 
+  /**
+   * El editor visual re-serializa el JRXML al recibir un contenido nuevo desde fuera (p.ej. al
+   * cambiar de carta) y emite ese resultado como si fuera un cambio. No es una edición real del
+   * usuario, así que se actualiza también el "original" para que no quede marcada como con
+   * cambios pendientes solo por haberla abierto. Ver VisualEditorPaneComponent.jrxmlBaselineSync.
+   */
+  onJrxmlBaselineSync(newXml: string): void {
+    this.jrxml.set(newXml);
+    this.originalJrxml.set(newXml);
+  }
+
   onXmlDataChange(newXml: string): void {
     this.xmlData.set(newXml);
   }
