@@ -86,23 +86,12 @@
           <!-- Indicador de estado del corrector -->
           <div class="spellcheck-status">
             @if (spellcheckLang() !== 'off') {
-              @if (spellErrors().length === 0) {
-                <span class="spell-badge spell-badge-ok">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  <span>{{ t('modal.noSpellingErrors') }}</span>
-                </span>
-              } @else {
-                <span class="spell-badge spell-badge-warn">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
-                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                  </svg>
-                  <span>{{ spellErrors().length }} {{ spellErrors().length === 1 ? t('modal.errorFound') : t('modal.errorsFound') }}</span>
-                </span>
-              }
+              <span class="spell-badge spell-badge-ok">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>{{ t('modal.spellcheckNativeActive') }}</span>
+              </span>
             } @else {
               <span class="spell-badge spell-badge-off">
                 <span>{{ t('modal.spellcheckDisabled') }}</span>
@@ -112,18 +101,14 @@
         </div>
 
         <div class="textarea-container">
-          <!-- Fondo de subrayado sincronizado (solo la línea roja ondulada, sin fondo rojo) -->
-          <div #backdropRef class="textarea-backdrop" [class.code-font]="kind === 'textField'">
-            <div class="backdrop-content" [innerHTML]="backdropHtml()"></div>
-          </div>
-
           <textarea
             #modalTextarea
             class="modal-textarea"
             [class.code-font]="kind === 'textField'"
             [value]="editedContent()"
+            [attr.spellcheck]="spellcheckLang() !== 'off'"
+            [attr.lang]="spellcheckLang() !== 'off' ? spellcheckLang() : null"
             (input)="onInput(modalTextarea.value)"
-            (scroll)="onTextareaScroll()"
             (keydown)="onKeyDown($event)"
             rows="12"
             [placeholder]="t('modal.placeholder')"

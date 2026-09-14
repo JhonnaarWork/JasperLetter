@@ -14,10 +14,17 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { I18nService } from '../../../../../services/i18n.service';
-import { SpellcheckService, SpellError } from '../../../../../services/spellcheck.service';
 
 /**
- * Modal de edición de texto estático / expresión de campo, con corrector ortográfico.
+ * Modal de edición de texto estático / expresión de campo, con corrector ortográfico nativo
+ * del navegador (spellcheck + lang en el textarea) — sin overlay propio: se probó en vivo que
+ * la técnica anterior de un <div> de fondo sincronizado con subrayados propios convivía sin
+ * coordinarse con el corrector nativo del navegador (que sigue activo por defecto en cualquier
+ * textarea), mostrando subrayados duplicados/inconsistentes y sugerencias de clic derecho en
+ * el idioma equivocado. Ahora se apaga el corrector nativo cuando el usuario lo desactiva y se
+ * le da la pista de idioma vía [attr.lang], dejando que el propio navegador (y su menú de clic
+ * derecho con sugerencias reales) se encargue de todo.
+ *
  * Anidado dentro de VisualEditorPaneComponent (no es un modal de nivel raíz de la app): su
  * botón "Aplicar" necesita escribir sobre el store interno del editor visual de terceros, que
  * solo VisualEditorPaneComponent conoce (ver el comentario de esa clase). Este componente es
@@ -41,15 +48,11 @@ export class TextEditModalComponent implements OnChanges {
   @Output() cancel = new EventEmitter<void>();
 
   @ViewChild('modalTextarea') modalTextareaRef?: ElementRef<HTMLTextAreaElement>;
-  @ViewChild('backdropRef') backdropRef?: ElementRef<HTMLDivElement>;
 
-  private readonly spellcheckService = inject(SpellcheckService);
   private readonly i18n = inject(I18nService);
 
   readonly editedContent = signal<string>('');
   readonly spellcheckLang = signal<'es' | 'en' | 'off'>('es');
-  readonly spellErrors = signal<SpellError[]>([]);
-  readonly backdropHtml = signal<string>('');
 
   t(key: string, ...params: (string | number)[]): string {
     return this.i18n.t(key, ...params);
@@ -64,29 +67,19 @@ export class TextEditModalComponent implements OnChanges {
         this.spellcheckLang.set(this.i18n.currentLang() === 'en' ? 'en' : 'es');
       }
 
-      // Ensure Hunspell dictionaries are loaded then update spellcheck
-      this.spellcheckService.init().then(() => {
-        this.updateSpellcheck();
-        this.syncScrollAndWidth();
-      });
-
       setTimeout(() => {
         if (this.modalTextareaRef?.nativeElement) {
           const textarea = this.modalTextareaRef.nativeElement;
           textarea.focus();
           textarea.setSelectionRange(0, 0);
           textarea.scrollTop = 0;
-          this.syncScrollAndWidth();
         }
-        this.updateSpellcheck();
       }, 60);
     }
   }
 
   setSpellcheckLang(lang: 'es' | 'en' | 'off'): void {
     this.spellcheckLang.set(lang);
-    this.updateSpellcheck();
-    this.syncScrollAndWidth();
     setTimeout(() => {
       this.modalTextareaRef?.nativeElement?.focus();
     }, 0);
@@ -94,74 +87,6 @@ export class TextEditModalComponent implements OnChanges {
 
   onInput(val: string): void {
     this.editedContent.set(val);
-    this.updateSpellcheck();
-    this.syncScrollAndWidth();
-  }
-
-  onTextareaScroll(): void {
-    if (this.backdropRef?.nativeElement && this.modalTextareaRef?.nativeElement) {
-      this.backdropRef.nativeElement.scrollTop = this.modalTextareaRef.nativeElement.scrollTop;
-      this.backdropRef.nativeElement.scrollLeft = this.modalTextareaRef.nativeElement.scrollLeft;
-    }
-  }
-
-  syncScrollAndWidth(): void {
-    if (this.backdropRef?.nativeElement && this.modalTextareaRef?.nativeElement) {
-      const textarea = this.modalTextareaRef.nativeElement;
-      const backdrop = this.backdropRef.nativeElement;
-      backdrop.scrollTop = textarea.scrollTop;
-      backdrop.scrollLeft = textarea.scrollLeft;
-      const scrollbarWidth = textarea.offsetWidth - textarea.clientWidth;
-      backdrop.style.paddingRight = `${14 + scrollbarWidth}px`;
-    }
-  }
-
-  updateSpellcheck(): void {
-    const lang = this.spellcheckLang();
-    const text = this.editedContent();
-    const isExpr = this.kind === 'textField';
-
-    if (lang === 'off' || !text) {
-      this.spellErrors.set([]);
-      this.backdropHtml.set(this.escapeHtml(text));
-      return;
-    }
-
-    const errors = this.spellcheckService.checkText(text, lang, isExpr);
-    this.spellErrors.set(errors);
-    this.backdropHtml.set(this.buildBackdropHtml(text, errors));
-  }
-
-  buildBackdropHtml(text: string, errors: SpellError[]): string {
-    if (!text) return '&nbsp;';
-    if (!errors || errors.length === 0) return this.escapeHtml(text);
-
-    const sorted = [...errors].sort((a, b) => a.startIndex - b.startIndex);
-    let html = '';
-    let lastIdx = 0;
-
-    for (const err of sorted) {
-      if (err.startIndex > lastIdx) {
-        html += this.escapeHtml(text.substring(lastIdx, err.startIndex));
-      }
-      const word = text.substring(err.startIndex, err.endIndex);
-      html += `<mark class="spell-error-mark">${this.escapeHtml(word)}</mark>`;
-      lastIdx = err.endIndex;
-    }
-    if (lastIdx < text.length) {
-      html += this.escapeHtml(text.substring(lastIdx));
-    }
-    return html;
-  }
-
-  escapeHtml(str: string): string {
-    if (!str) return '';
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
   }
 
   insertIntoExpression(snippet: string): void {

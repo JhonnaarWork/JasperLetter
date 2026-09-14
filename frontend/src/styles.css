@@ -162,21 +162,6 @@ lib-jasper-toolbar .zoom + .sep {
 }
 
 /* ==========================================================================
-   Corrector Ortográfico: Subrayado Rojo Ondulado en Modal
-   (Sin fondo rojo ni amarillo, únicamente el subrayado ondulado limpio)
-   ========================================================================== */
-.textarea-backdrop mark.spell-error-mark {
-  color: transparent !important;
-  background: transparent !important;
-  background-color: transparent !important;
-  text-decoration: underline wavy #DC2626 2px !important;
-  text-underline-offset: 3px !important;
-  border: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-/* ==========================================================================
    Sistema de diseño compartido: botones, modales y campos de formulario
    Movido desde app.component.css (hallazgo F-1): estas clases las usan
    AppComponent y cualquier componente de modal extraído de él (ej.
