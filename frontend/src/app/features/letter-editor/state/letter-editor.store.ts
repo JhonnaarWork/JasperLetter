@@ -15,7 +15,7 @@ import {
   parseXmlDataAdapter,
   serializeXmlDataAdapter
 } from '../../../models/data-adapter.model';
-import { createStarterXmlData } from '../../../models/xml-data.model';
+import { createStarterXmlData, generateXmlDataFromFields } from '../../../models/xml-data.model';
 import { environment } from '../../../../environments/environment';
 
 /**
@@ -200,6 +200,31 @@ export class LetterEditorStore {
 
   onXmlDataChange(newXml: string): void {
     this.xmlData.set(newXml);
+  }
+
+  /**
+   * Analiza los <field> del JRXML y agrega al XML de datos los nodos/atributos que les
+   * correspondan según su fieldDescription, sin tocar los que ya tienen valor. Ver
+   * generateXmlDataFromFields() en models/xml-data.model.ts para el detalle del algoritmo.
+   */
+  generateXmlDataFromFields(): void {
+    try {
+      const result = generateXmlDataFromFields(this.jrxml(), this.xmlData());
+      this.xmlData.set(result.xml);
+
+      if (result.added.length === 0 && result.skipped.length === 0) {
+        this.saveStatus.set({ type: 'success', message: this.i18n.t('toast.generateDataNoChanges') });
+      } else if (result.added.length === 0) {
+        this.saveStatus.set({ type: 'success', message: this.i18n.t('toast.generateDataAllPresent') });
+      } else {
+        this.saveStatus.set({
+          type: 'success',
+          message: this.i18n.t('toast.generateDataSuccess', result.added.length, result.added.join(', '))
+        });
+      }
+    } catch (err: any) {
+      this.saveStatus.set({ type: 'error', message: err?.message || this.i18n.t('toast.generateDataError') });
+    }
   }
 
   resetXmlData(): void {

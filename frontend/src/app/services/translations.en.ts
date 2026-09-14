@@ -54,6 +54,8 @@ export const EN_TRANSLATIONS: Record<string, string> = {
   'toolbar.xmlRealtimeNote': '⚡ Changes to this XML are reflected in real time in the PDF preview',
   'toolbar.restoreOriginal': '↺ Restore Original',
   'toolbar.restoreOriginalTooltip': 'Restore to original content on disk',
+  'toolbar.generateData': '✨ Generate Data',
+  'toolbar.generateDataTooltip': "Analyzes the JRXML's fields (their fieldDescription) and adds any missing ones to the XML data, without touching values that already exist",
   'toolbar.xmlPlaceholder': 'Paste or edit the letter XML data here...',
   'toolbar.jrxmlCode': 'JRXML Code:',
   'toolbar.syntax': 'Syntax: {0}',
@@ -151,6 +153,10 @@ export const EN_TRANSLATIONS: Record<string, string> = {
   'toast.saveSuccess': 'Letter {0} successfully saved to disk as {1}!',
   'toast.saveError': 'Error saving letter: {0}',
   'toast.loadError': 'Could not load letter {0}: {1}',
+  'toast.generateDataSuccess': 'Added {0} field(s) to the XML data: {1}',
+  'toast.generateDataAllPresent': 'All of the JRXML fields already have data; nothing was added.',
+  'toast.generateDataNoChanges': 'The JRXML has no fields with a fieldDescription; nothing to generate.',
+  'toast.generateDataError': 'Could not generate data from the JRXML.',
 
   // Visual Editor (Palette & Properties)
   'editor.palette': 'Palette',

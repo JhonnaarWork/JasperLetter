@@ -199,6 +199,10 @@ export class AppComponent implements OnInit {
     this.letterEditor.onXmlDataChange(newXml);
   }
 
+  generateXmlDataFromFields(): void {
+    this.letterEditor.generateXmlDataFromFields();
+  }
+
   resetXmlData(): void {
     this.letterEditor.resetXmlData();
   }

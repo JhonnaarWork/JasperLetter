@@ -190,6 +190,18 @@
               <button
                 type="button"
                 class="tb-btn"
+                (click)="generateXmlDataFromFields()"
+                [title]="t('toolbar.generateDataTooltip')"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M15 4V2m0 14v-2M8 9h2M20 9h2M17.8 11.8 19 13M15 9h0M17.8 6.2 19 5M3 21l9-9m-4-2 3-3" />
+                </svg>
+                <span>{{ t('toolbar.generateData') }}</span>
+              </button>
+
+              <button
+                type="button"
+                class="tb-btn"
                 (click)="openSelectXmlDataModal()"
                 title="Seleccionar o crear otro archivo de datos XML"
               >

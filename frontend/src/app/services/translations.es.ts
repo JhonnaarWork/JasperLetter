@@ -54,6 +54,8 @@ export const ES_TRANSLATIONS: Record<string, string> = {
   'toolbar.xmlRealtimeNote': '⚡ Los cambios en este XML se reflejan en tiempo real en la vista previa del PDF',
   'toolbar.restoreOriginal': '↺ Restaurar Original',
   'toolbar.restoreOriginalTooltip': 'Restaurar al contenido original en disco',
+  'toolbar.generateData': '✨ Generar Datos',
+  'toolbar.generateDataTooltip': 'Analiza los fields del JRXML (su fieldDescription) y agrega al XML de datos los que falten, sin tocar los que ya tienen valor',
   'toolbar.xmlPlaceholder': 'Pegue o edite aquí los datos XML de la carta...',
   'toolbar.jrxmlCode': 'Código JRXML:',
   'toolbar.syntax': 'Sintaxis: {0}',
@@ -151,6 +153,10 @@ export const ES_TRANSLATIONS: Record<string, string> = {
   'toast.saveSuccess': '¡Carta {0} guardada exitosamente en disco como {1}!',
   'toast.saveError': 'Error al guardar la carta: {0}',
   'toast.loadError': 'No se pudo cargar la carta {0}: {1}',
+  'toast.generateDataSuccess': 'Se agregaron {0} campo(s) al XML de datos: {1}',
+  'toast.generateDataAllPresent': 'Todos los fields del JRXML ya tienen datos; no se agregó nada.',
+  'toast.generateDataNoChanges': 'El JRXML no tiene fields con fieldDescription; no hay nada que generar.',
+  'toast.generateDataError': 'No se pudieron generar los datos a partir del JRXML.',
 
   // Editor Visual (Paleta y Propiedades)
   'editor.palette': 'Paleta',
