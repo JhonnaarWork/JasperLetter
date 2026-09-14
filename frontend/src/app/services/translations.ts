@@ -200,7 +200,6 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'modal.spellcheckDisabled': 'Corrector desactivado',
 
     // Nueva carta y estados
-    'header.createLetter': 'Crear Carta',
     'header.selectPlaceholder': '-- Seleccione una carta --',
     'welcome.title': 'Bienvenido al Gestor de Cartas Jasper',
     'welcome.subtitle': 'Selecciona una carta del selector superior o crea una nueva carta desde cero para comenzar a editar y previsualizar en tiempo real.',
@@ -438,7 +437,6 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'modal.spellcheckDisabled': 'Spellchecker disabled',
 
     // New letter and states
-    'header.createLetter': 'Create Letter',
     'header.selectPlaceholder': '-- Select a letter --',
     'welcome.title': 'Welcome to Jasper Letter Studio',
     'welcome.subtitle': 'Select a letter from the selector above or create a new letter from scratch to begin editing and previewing in real time.',

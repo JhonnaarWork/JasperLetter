@@ -13,31 +13,19 @@
 
   <!-- Grupo Central: Selector de Carta, Formato y Vistas (Centrado) -->
   <div class="header-center">
-    <!-- Botón Crear Carta -->
-    <button
-      type="button"
-      class="btn btn-create-letter"
-      (click)="createLetter.emit()"
-      [title]="t('modal.createLetterDesc')"
-    >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-      </svg>
-      <span>{{ t('header.createLetter') }}</span>
-    </button>
-
-    <!-- Selector de Carta o Plantilla -->
+    <!-- Selector de Carta o Plantilla (incluye la opción de crear una nueva) -->
     <label class="control-group">
       <span class="control-label">{{ t('header.document') }}</span>
       <select
+        #documentSelect
         class="select-input"
         [ngModel]="currentSelection"
-        (ngModelChange)="selectionChange.emit($event)"
+        (ngModelChange)="onSelectionChange($event)"
       >
         @if (!currentSelection) {
           <option value="" disabled selected>{{ t('header.selectPlaceholder') }}</option>
         }
+        <option value="__create__">{{ t('welcome.createBtn') }}</option>
         @if (resourceLetters.length > 0) {
           <optgroup [label]="t('header.lettersGroup')">
             @for (letter of resourceLetters; track letter.id) {

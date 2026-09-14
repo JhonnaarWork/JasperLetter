@@ -269,28 +269,7 @@
   opacity: 1;
 }
 
-/* Botón Crear Carta y Dirty Badge */
-.btn-create-letter {
-  background: #0F5B9E;
-  color: #FFFFFF;
-  border: 1px solid #0D4E87;
-  padding: 5px 12px;
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.btn-create-letter:hover {
-  background: #0D4E87;
-  box-shadow: 0 2px 4px rgba(15, 91, 158, 0.25);
-}
-
+/* Dirty Badge */
 .save-dirty-badge {
   background: #EA580C;
   color: #FFFFFF;

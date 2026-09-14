@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, Output, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { I18nService, Language } from '../../../../services/i18n.service';
@@ -41,9 +41,29 @@ export class LetterHeaderComponent {
   @Output() saveClick = new EventEmitter<void>();
   @Output() languageChange = new EventEmitter<Language>();
 
+  @ViewChild('documentSelect') documentSelectRef?: ElementRef<HTMLSelectElement>;
+
   private readonly i18n = inject(I18nService);
 
   t(key: string, ...params: (string | number)[]): string {
     return this.i18n.t(key, ...params);
+  }
+
+  /**
+   * El selector de carta incluye una opción "Crear nueva carta" (value="__create__") en vez de
+   * un botón aparte en el header. currentSelection no cambia al elegirla, pero el <select>
+   * nativo sí actualiza su propio valor visual al hacer clic en la opción — Angular no lo
+   * revierte solo porque el modelo ligado no cambió, así que hay que forzarlo de vuelta al
+   * valor real a través del elemento nativo.
+   */
+  onSelectionChange(value: string): void {
+    if (value === '__create__') {
+      this.createLetter.emit();
+      if (this.documentSelectRef?.nativeElement) {
+        this.documentSelectRef.nativeElement.value = this.currentSelection;
+      }
+      return;
+    }
+    this.selectionChange.emit(value);
   }
 }
