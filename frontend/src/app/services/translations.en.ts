@@ -1,6 +1,6 @@
 export const EN_TRANSLATIONS: Record<string, string> = {
   // Header & Brand
-  'brand.title': 'Jasper Letter Studio',
+  'brand.title': 'Customers Letter Studio',
   'brand.subtitle': 'inCMS • Letter Manager',
   'header.document': 'Document:',
   'header.lettersGroup': '📁 Letters in resources/',
@@ -201,7 +201,7 @@ export const EN_TRANSLATIONS: Record<string, string> = {
   'header.selectPlaceholder': '-- Select a letter --',
   'welcome.title': 'Welcome to Jasper Letter Studio',
   'welcome.subtitle': 'Select a letter from the selector above or create a new letter from scratch to begin editing and previewing in real time.',
-  'welcome.createBtn': '+ Create New Letter',
+  'welcome.createBtn': 'Create New Letter',
   'welcome.feature1Title': 'Visual Designer & JRXML Code',
   'welcome.feature1Desc': 'Visual editor with bands, text and styles with immediate bidirectional JRXML code synchronization.',
   'welcome.feature2Title': 'Data Adapter & XML Data',

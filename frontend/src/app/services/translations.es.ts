@@ -1,6 +1,6 @@
 export const ES_TRANSLATIONS: Record<string, string> = {
   // Header & Marca
-  'brand.title': 'Jasper Letter Studio',
+  'brand.title': 'Customers Letter Studio',
   'brand.subtitle': 'inCMS • Gestor de Cartas',
   'header.document': 'Documento:',
   'header.lettersGroup': '📁 Cartas en resources/',
@@ -201,7 +201,7 @@ export const ES_TRANSLATIONS: Record<string, string> = {
   'header.selectPlaceholder': '-- Seleccione una carta --',
   'welcome.title': 'Bienvenido al Gestor de Cartas Jasper',
   'welcome.subtitle': 'Selecciona una carta del selector superior o crea una nueva carta desde cero para comenzar a editar y previsualizar en tiempo real.',
-  'welcome.createBtn': '+ Crear Nueva Carta',
+  'welcome.createBtn': 'Crear Nueva Carta',
   'welcome.feature1Title': 'Diseño Visual & Código JRXML',
   'welcome.feature1Desc': 'Editor visual de bandas, textos y estilos con sincronización bidireccional inmediata al código JRXML.',
   'welcome.feature2Title': 'Data Adapter & Datos XML',
