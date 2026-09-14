@@ -69,16 +69,28 @@ export class VisualEditorPaneComponent implements OnInit, OnChanges, OnDestroy {
   /** true tras el primer @Input jrxml recibido: el editor de terceros nunca emite eco en su
    *  primerísima carga (su propio guard interno "initial"), así que no hay nada que esperar. */
   private hasReceivedFirstJrxml = false;
-  /** armado cuando el padre nos empuja un jrxml distinto al que ya teníamos (p.ej. al cambiar
-   *  de carta): el próximo jrxmlChange que llegue del editor es el eco de re-serializado de
-   *  ESE valor, no una edición real, y se redirige a jrxmlBaselineSync en vez de jrxmlChange. */
+  /** armado cuando el padre nos empuja un jrxml que NO es lo último que nosotros mismos
+   *  emitimos (p.ej. al cambiar de carta): el próximo jrxmlChange que llegue del editor es el
+   *  eco de re-serializado de ESE valor, no una edición real, y se redirige a
+   *  jrxmlBaselineSync en vez de jrxmlChange. */
   private expectBaselineEcho = false;
+  /**
+   * Último valor que este componente emitió (por jrxmlChange o jrxmlBaselineSync). El padre nos
+   * lo devuelve tal cual vía binding bidireccional ([jrxml]="jrxml()" tras onJrxmlChange), así
+   * que ese rebote NO cuenta como un cambio externo — solo un jrxml entrante distinto de este
+   * valor es una carta nueva/otro origen y debe armar la espera del eco.
+   */
+  private lastOutgoingXml: string | null = null;
 
   ngOnChanges(changes: SimpleChanges): void {
     const change = changes['jrxml'];
     if (!change) return;
     if (!this.hasReceivedFirstJrxml) {
       this.hasReceivedFirstJrxml = true;
+      this.lastOutgoingXml = change.currentValue;
+      return;
+    }
+    if (change.currentValue === this.lastOutgoingXml) {
       return;
     }
     if (change.currentValue !== change.previousValue) {
@@ -99,6 +111,7 @@ export class VisualEditorPaneComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   onJrxmlChange(newXml: string): void {
+    this.lastOutgoingXml = newXml;
     if (this.expectBaselineEcho) {
       this.expectBaselineEcho = false;
       this.jrxmlBaselineSync.emit(newXml);
