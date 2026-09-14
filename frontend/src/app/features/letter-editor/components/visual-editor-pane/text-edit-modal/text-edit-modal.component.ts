@@ -21,9 +21,16 @@ import { I18nService } from '../../../../../services/i18n.service';
  * la técnica anterior de un <div> de fondo sincronizado con subrayados propios convivía sin
  * coordinarse con el corrector nativo del navegador (que sigue activo por defecto en cualquier
  * textarea), mostrando subrayados duplicados/inconsistentes y sugerencias de clic derecho en
- * el idioma equivocado. Ahora se apaga el corrector nativo cuando el usuario lo desactiva y se
- * le da la pista de idioma vía [attr.lang], dejando que el propio navegador (y su menú de clic
- * derecho con sugerencias reales) se encargue de todo.
+ * el idioma equivocado. Ahora se apaga el corrector nativo cuando el usuario lo desactiva,
+ * dejando que el propio navegador (y su menú de clic derecho con sugerencias reales) se
+ * encargue de todo.
+ *
+ * No hay selector de idioma para el corrector: se probó y la mayoría de navegadores basados en
+ * Chromium ignoran el atributo lang por elemento para elegir el diccionario de corrección — usan
+ * el idioma configurado en las preferencias del propio navegador, no el de un control dentro de
+ * la página. El atributo lang igual se fija al idioma actual de la app (útil en los navegadores
+ * que sí lo respetan, como Firefox), pero no se expone como algo elegible porque no sería un
+ * control real en la mayoría de casos.
  *
  * Anidado dentro de VisualEditorPaneComponent (no es un modal de nivel raíz de la app): su
  * botón "Aplicar" necesita escribir sobre el store interno del editor visual de terceros, que
@@ -52,7 +59,8 @@ export class TextEditModalComponent implements OnChanges {
   private readonly i18n = inject(I18nService);
 
   readonly editedContent = signal<string>('');
-  readonly spellcheckLang = signal<'es' | 'en' | 'off'>('es');
+  readonly spellcheckEnabled = signal<boolean>(true);
+  readonly currentAppLang = this.i18n.currentLang;
 
   t(key: string, ...params: (string | number)[]): string {
     return this.i18n.t(key, ...params);
@@ -61,11 +69,6 @@ export class TextEditModalComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open) {
       this.editedContent.set(this.content);
-
-      // Ajustar idioma del corrector al idioma actual de la aplicación si no está desactivado
-      if (this.spellcheckLang() !== 'off') {
-        this.spellcheckLang.set(this.i18n.currentLang() === 'en' ? 'en' : 'es');
-      }
 
       setTimeout(() => {
         if (this.modalTextareaRef?.nativeElement) {
@@ -78,8 +81,8 @@ export class TextEditModalComponent implements OnChanges {
     }
   }
 
-  setSpellcheckLang(lang: 'es' | 'en' | 'off'): void {
-    this.spellcheckLang.set(lang);
+  setSpellcheckEnabled(enabled: boolean): void {
+    this.spellcheckEnabled.set(enabled);
     setTimeout(() => {
       this.modalTextareaRef?.nativeElement?.focus();
     }, 0);

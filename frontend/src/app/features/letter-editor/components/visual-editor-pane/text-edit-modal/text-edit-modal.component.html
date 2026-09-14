@@ -40,7 +40,7 @@
           </div>
         }
 
-        <!-- Barra del Corrector Ortográfico con Selector de Idioma -->
+        <!-- Barra del Corrector Ortográfico -->
         <div class="spellcheck-bar">
           <div class="spellcheck-lang-picker">
             <span class="spellcheck-icon" [title]="t('modal.correctorLabel')">
@@ -52,52 +52,29 @@
               </svg>
             </span>
             <span class="spellcheck-label">{{ t('modal.correctorLabel') }}:</span>
-            <div class="spell-lang-segmented">
-              <button
-                type="button"
-                class="spell-lang-btn"
-                [class.active]="spellcheckLang() === 'es'"
-                (click)="setSpellcheckLang('es')"
-                [title]="t('modal.spellcheckEs')"
-              >
-                🇪🇸 {{ t('modal.spellcheckEs') }}
-              </button>
-              <button
-                type="button"
-                class="spell-lang-btn"
-                [class.active]="spellcheckLang() === 'en'"
-                (click)="setSpellcheckLang('en')"
-                [title]="t('modal.spellcheckEn')"
-              >
-                🇬🇧 {{ t('modal.spellcheckEn') }}
-              </button>
-              <button
-                type="button"
-                class="spell-lang-btn btn-off"
-                [class.active]="spellcheckLang() === 'off'"
-                (click)="setSpellcheckLang('off')"
-                [title]="t('modal.spellcheckOffTooltip')"
-              >
-                ⊘ {{ t('modal.spellcheckOff') }}
-              </button>
-            </div>
           </div>
 
-          <!-- Indicador de estado del corrector -->
-          <div class="spellcheck-status">
-            @if (spellcheckLang() !== 'off') {
-              <span class="spell-badge spell-badge-ok">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>{{ t('modal.spellcheckNativeActive') }}</span>
-              </span>
+          <!-- Interruptor único: activar/desactivar el corrector nativo del navegador. No hay
+               selector de idioma porque la mayoría de navegadores (Chrome/Edge) ignoran el
+               atributo lang por elemento para elegir el diccionario de corrección — usan el
+               idioma configurado en el navegador, no el de este control. -->
+          <button
+            type="button"
+            class="spell-badge spell-toggle-btn"
+            [class.spell-badge-ok]="spellcheckEnabled()"
+            [class.spell-badge-off]="!spellcheckEnabled()"
+            (click)="setSpellcheckEnabled(!spellcheckEnabled())"
+            [title]="spellcheckEnabled() ? t('modal.spellcheckOffTooltip') : t('modal.correctorLabel')"
+          >
+            @if (spellcheckEnabled()) {
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>{{ t('modal.spellcheckNativeActive') }}</span>
             } @else {
-              <span class="spell-badge spell-badge-off">
-                <span>{{ t('modal.spellcheckDisabled') }}</span>
-              </span>
+              <span>{{ t('modal.spellcheckDisabled') }}</span>
             }
-          </div>
+          </button>
         </div>
 
         <div class="textarea-container">
@@ -106,8 +83,8 @@
             class="modal-textarea"
             [class.code-font]="kind === 'textField'"
             [value]="editedContent()"
-            [attr.spellcheck]="spellcheckLang() !== 'off'"
-            [attr.lang]="spellcheckLang() !== 'off' ? spellcheckLang() : null"
+            [attr.spellcheck]="spellcheckEnabled()"
+            [attr.lang]="spellcheckEnabled() ? currentAppLang() : null"
             (input)="onInput(modalTextarea.value)"
             (keydown)="onKeyDown($event)"
             rows="12"

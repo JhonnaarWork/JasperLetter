@@ -195,10 +195,6 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Corrector ortográfico en modal
     'modal.correctorLabel': 'Corrector',
-    'modal.spellcheckLang': 'Idioma de revisión',
-    'modal.spellcheckEs': 'Español',
-    'modal.spellcheckEn': 'Inglés',
-    'modal.spellcheckOff': 'Desactivado',
     'modal.spellcheckOffTooltip': 'Desactivar revisión ortográfica',
     'modal.spellcheckNativeActive': 'Corrector activo (subrayado nativo)',
     'modal.spellcheckDisabled': 'Corrector desactivado',
@@ -437,10 +433,6 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Spellchecker in modal
     'modal.correctorLabel': 'Spellchecker',
-    'modal.spellcheckLang': 'Review language',
-    'modal.spellcheckEs': 'Spanish',
-    'modal.spellcheckEn': 'English',
-    'modal.spellcheckOff': 'Off',
     'modal.spellcheckOffTooltip': 'Disable spellcheck review',
     'modal.spellcheckNativeActive': 'Spellchecker active (native underline)',
     'modal.spellcheckDisabled': 'Spellchecker disabled',
