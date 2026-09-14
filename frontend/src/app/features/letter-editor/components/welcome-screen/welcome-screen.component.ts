@@ -1,11 +1,13 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { I18nService } from '../../../../services/i18n.service';
-import { LetterResourceInfo } from '../../../../models/letter-resource.model';
 
 /**
  * Pantalla de bienvenida mostrada cuando no hay ninguna carta ni plantilla de ejemplo
  * seleccionada. Componente de presentación pura: sin estado propio, todo por @Input/@Output.
+ * Solo ofrece crear una carta nueva — seleccionar una existente se hace desde el selector del
+ * header, que ya lista todas las cartas y escala mejor que repetir esa lista aquí (con muchas
+ * cartas en el repositorio, un muro de botones sin buscador deja de ser usable).
  */
 @Component({
   selector: 'app-welcome-screen',
@@ -16,10 +18,7 @@ import { LetterResourceInfo } from '../../../../models/letter-resource.model';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WelcomeScreenComponent {
-  @Input({ required: true }) resourceLetters: LetterResourceInfo[] = [];
-
   @Output() createLetter = new EventEmitter<void>();
-  @Output() selectResourceLetter = new EventEmitter<string>();
 
   private readonly i18n = inject(I18nService);
 

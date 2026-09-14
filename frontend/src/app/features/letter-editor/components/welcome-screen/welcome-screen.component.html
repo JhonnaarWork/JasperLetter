@@ -24,26 +24,6 @@
         </svg>
         <span>{{ t('welcome.createBtn') }}</span>
       </button>
-
-      @if (resourceLetters.length > 0) {
-        <div class="welcome-recent-letters">
-          <span class="recent-label">O selecciona una carta del repositorio:</span>
-          <div class="recent-badges">
-            @for (letter of resourceLetters; track letter.id) {
-              <button
-                type="button"
-                class="recent-letter-pill"
-                (click)="selectResourceLetter.emit(letter.id)"
-                [title]="'Abrir carta ' + letter.name"
-              >
-                <span class="pill-icon">📁</span>
-                <span class="pill-name">{{ letter.name }}</span>
-                <span class="pill-format">{{ letter.format }}</span>
-              </button>
-            }
-          </div>
-        </div>
-      }
     </div>
 
     <div class="welcome-features-grid">

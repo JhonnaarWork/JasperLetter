@@ -55,9 +55,7 @@
   >
     @if (!selectedLetterId() && !selectedSampleId()) {
       <app-welcome-screen
-        [resourceLetters]="resourceLetters()"
         (createLetter)="openCreateLetterModal()"
-        (selectResourceLetter)="onSelectionChange('resource:' + $event)"
       />
     } @else {
       <!-- Panel Izquierdo: Editor Visual, Datos XML o Código JRXML -->
