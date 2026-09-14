@@ -1,0 +1,61 @@
+diff --git a/node_modules/@florianrauscha/ngx-jrxml-editor/fesm2022/florianrauscha-ngx-jrxml-editor.mjs b/node_modules/@florianrauscha/ngx-jrxml-editor/fesm2022/florianrauscha-ngx-jrxml-editor.mjs
+index 2e475a5..22285ac 100644
+--- a/node_modules/@florianrauscha/ngx-jrxml-editor/fesm2022/florianrauscha-ngx-jrxml-editor.mjs
++++ b/node_modules/@florianrauscha/ngx-jrxml-editor/fesm2022/florianrauscha-ngx-jrxml-editor.mjs
+@@ -1034,7 +1034,7 @@ function serializeQuery(q) {
+ function serializeField(f) {
+     const out = { [ATTR + 'name']: f.name, [ATTR + 'class']: f.class };
+     if (f.description)
+-        out['description'] = cdata(f.description);
++        out['fieldDescription'] = cdata(f.description);
+     appendProperties(out, f.properties);
+     return out;
+ }
+@@ -3867,6 +3867,14 @@ class JasperDataSourceComponent {
+           </select>
+           <button type="button" class="ds-del" (click)="removeField(i)"><lib-icon name="x" [size]="12" /></button>
+         </div>
++        <div class="ds-row-desc">
++          <input
++            type="text"
++            placeholder="fieldDescription (e.g. XPath expression)"
++            [ngModel]="f.description"
++            (ngModelChange)="updateField(i, { description: $event })"
++          />
++        </div>
+       }
+     </section>
+ 
+@@ -3939,7 +3947,7 @@ class JasperDataSourceComponent {
+         </div>
+       }
+     </section>
+-  `, isInline: true, styles: [":host{display:block;background:#f7f8fb;font-family:-apple-system,system-ui,sans-serif;font-size:12px;height:100%;overflow-y:auto}section{padding:12px 16px;border-bottom:1px solid #e1e4eb}h3{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#888;font-weight:600;display:flex;justify-content:space-between;align-items:center}h3 button{display:inline-flex;align-items:center;gap:4px;background:#4a6cf7;color:#fff;border:none;border-radius:3px;padding:3px 8px;font-size:11px;font-family:inherit;cursor:pointer;line-height:1}.ds-row{display:grid;grid-template-columns:22px minmax(0,1fr) minmax(0,1fr) 22px;gap:4px;margin-bottom:4px}.ds-grip{display:inline-flex;align-items:center;justify-content:center;height:22px;background:#eef0f4;border:1px solid #cfd3dc;border-radius:3px;cursor:grab;font-family:ui-monospace,Menlo,monospace;font-size:9px;font-weight:700;color:#4a6cf7;-webkit-user-select:none;user-select:none}.ds-grip:active{cursor:grabbing}.ds-grip:hover{background:#4a6cf7;color:#fff;border-color:#4a6cf7}input,select{width:100%;padding:3px 6px;border:1px solid #cfd3dc;border-radius:3px;font-family:inherit;font-size:11px;background:#fff;min-width:0;box-sizing:border-box}.ds-del{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;background:transparent;border:1px solid #cfd3dc;border-radius:3px;cursor:pointer;color:#888;line-height:1}.ds-del:hover{color:#b00020;border-color:#b00020}.ds-empty{color:#aaa;font-style:italic;padding:4px 0}\n"], dependencies: [{ kind: "ngmodule", type: FormsModule }, { kind: "directive", type: i1.NgSelectOption, selector: "option", inputs: ["ngValue", "value"] }, { kind: "directive", type: i1.ɵNgSelectMultipleOption, selector: "option", inputs: ["ngValue", "value"] }, { kind: "directive", type: i1.DefaultValueAccessor, selector: "input:not([type=checkbox])[formControlName],textarea[formControlName],input:not([type=checkbox])[formControl],textarea[formControl],input:not([type=checkbox])[ngModel],textarea[ngModel],[ngDefaultControl]" }, { kind: "directive", type: i1.SelectControlValueAccessor, selector: "select:not([multiple])[formControlName],select:not([multiple])[formControl],select:not([multiple])[ngModel]", inputs: ["compareWith"] }, { kind: "directive", type: i1.NgControlStatus, selector: "[formControlName],[ngModel],[formControl]" }, { kind: "directive", type: i1.NgModel, selector: "[ngModel]:not([formControlName]):not([formControl])", inputs: ["name", "disabled", "ngModel", "ngModelOptions"], outputs: ["ngModelChange"], exportAs: ["ngModel"] }, { kind: "component", type: JasperIconComponent, selector: "lib-icon", inputs: ["name", "size"] }], changeDetection: i0.ChangeDetectionStrategy.OnPush });
++  `, isInline: true, styles: [":host{display:block;background:#f7f8fb;font-family:-apple-system,system-ui,sans-serif;font-size:12px;height:100%;overflow-y:auto}section{padding:12px 16px;border-bottom:1px solid #e1e4eb}h3{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#888;font-weight:600;display:flex;justify-content:space-between;align-items:center}h3 button{display:inline-flex;align-items:center;gap:4px;background:#4a6cf7;color:#fff;border:none;border-radius:3px;padding:3px 8px;font-size:11px;font-family:inherit;cursor:pointer;line-height:1}.ds-row{display:grid;grid-template-columns:22px minmax(0,1fr) minmax(0,1fr) 22px;gap:4px;margin-bottom:4px}.ds-row-desc{margin:-2px 0 6px 26px}.ds-row-desc input{font-style:italic}.ds-grip{display:inline-flex;align-items:center;justify-content:center;height:22px;background:#eef0f4;border:1px solid #cfd3dc;border-radius:3px;cursor:grab;font-family:ui-monospace,Menlo,monospace;font-size:9px;font-weight:700;color:#4a6cf7;-webkit-user-select:none;user-select:none}.ds-grip:active{cursor:grabbing}.ds-grip:hover{background:#4a6cf7;color:#fff;border-color:#4a6cf7}input,select{width:100%;padding:3px 6px;border:1px solid #cfd3dc;border-radius:3px;font-family:inherit;font-size:11px;background:#fff;min-width:0;box-sizing:border-box}.ds-del{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;background:transparent;border:1px solid #cfd3dc;border-radius:3px;cursor:pointer;color:#888;line-height:1}.ds-del:hover{color:#b00020;border-color:#b00020}.ds-empty{color:#aaa;font-style:italic;padding:4px 0}\n"], dependencies: [{ kind: "ngmodule", type: FormsModule }, { kind: "directive", type: i1.NgSelectOption, selector: "option", inputs: ["ngValue", "value"] }, { kind: "directive", type: i1.ɵNgSelectMultipleOption, selector: "option", inputs: ["ngValue", "value"] }, { kind: "directive", type: i1.DefaultValueAccessor, selector: "input:not([type=checkbox])[formControlName],textarea[formControlName],input:not([type=checkbox])[formControl],textarea[formControl],input:not([type=checkbox])[ngModel],textarea[ngModel],[ngDefaultControl]" }, { kind: "directive", type: i1.SelectControlValueAccessor, selector: "select:not([multiple])[formControlName],select:not([multiple])[formControl],select:not([multiple])[ngModel]", inputs: ["compareWith"] }, { kind: "directive", type: i1.NgControlStatus, selector: "[formControlName],[ngModel],[formControl]" }, { kind: "directive", type: i1.NgModel, selector: "[ngModel]:not([formControlName]):not([formControl])", inputs: ["name", "disabled", "ngModel", "ngModelOptions"], outputs: ["ngModelChange"], exportAs: ["ngModel"] }, { kind: "component", type: JasperIconComponent, selector: "lib-icon", inputs: ["name", "size"] }], changeDetection: i0.ChangeDetectionStrategy.OnPush });
+ }
+ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "19.2.21", ngImport: i0, type: JasperDataSourceComponent, decorators: [{
+             type: Component,
+@@ -3976,6 +3984,14 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "19.2.21", ngImpo
+           </select>
+           <button type="button" class="ds-del" (click)="removeField(i)"><lib-icon name="x" [size]="12" /></button>
+         </div>
++        <div class="ds-row-desc">
++          <input
++            type="text"
++            placeholder="fieldDescription (e.g. XPath expression)"
++            [ngModel]="f.description"
++            (ngModelChange)="updateField(i, { description: $event })"
++          />
++        </div>
+       }
+     </section>
+ 
+@@ -4048,7 +4064,7 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "19.2.21", ngImpo
+         </div>
+       }
+     </section>
+-  `, styles: [":host{display:block;background:#f7f8fb;font-family:-apple-system,system-ui,sans-serif;font-size:12px;height:100%;overflow-y:auto}section{padding:12px 16px;border-bottom:1px solid #e1e4eb}h3{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#888;font-weight:600;display:flex;justify-content:space-between;align-items:center}h3 button{display:inline-flex;align-items:center;gap:4px;background:#4a6cf7;color:#fff;border:none;border-radius:3px;padding:3px 8px;font-size:11px;font-family:inherit;cursor:pointer;line-height:1}.ds-row{display:grid;grid-template-columns:22px minmax(0,1fr) minmax(0,1fr) 22px;gap:4px;margin-bottom:4px}.ds-grip{display:inline-flex;align-items:center;justify-content:center;height:22px;background:#eef0f4;border:1px solid #cfd3dc;border-radius:3px;cursor:grab;font-family:ui-monospace,Menlo,monospace;font-size:9px;font-weight:700;color:#4a6cf7;-webkit-user-select:none;user-select:none}.ds-grip:active{cursor:grabbing}.ds-grip:hover{background:#4a6cf7;color:#fff;border-color:#4a6cf7}input,select{width:100%;padding:3px 6px;border:1px solid #cfd3dc;border-radius:3px;font-family:inherit;font-size:11px;background:#fff;min-width:0;box-sizing:border-box}.ds-del{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;background:transparent;border:1px solid #cfd3dc;border-radius:3px;cursor:pointer;color:#888;line-height:1}.ds-del:hover{color:#b00020;border-color:#b00020}.ds-empty{color:#aaa;font-style:italic;padding:4px 0}\n"] }]
++  `, styles: [":host{display:block;background:#f7f8fb;font-family:-apple-system,system-ui,sans-serif;font-size:12px;height:100%;overflow-y:auto}section{padding:12px 16px;border-bottom:1px solid #e1e4eb}h3{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#888;font-weight:600;display:flex;justify-content:space-between;align-items:center}h3 button{display:inline-flex;align-items:center;gap:4px;background:#4a6cf7;color:#fff;border:none;border-radius:3px;padding:3px 8px;font-size:11px;font-family:inherit;cursor:pointer;line-height:1}.ds-row{display:grid;grid-template-columns:22px minmax(0,1fr) minmax(0,1fr) 22px;gap:4px;margin-bottom:4px}.ds-row-desc{margin:-2px 0 6px 26px}.ds-row-desc input{font-style:italic}.ds-grip{display:inline-flex;align-items:center;justify-content:center;height:22px;background:#eef0f4;border:1px solid #cfd3dc;border-radius:3px;cursor:grab;font-family:ui-monospace,Menlo,monospace;font-size:9px;font-weight:700;color:#4a6cf7;-webkit-user-select:none;user-select:none}.ds-grip:active{cursor:grabbing}.ds-grip:hover{background:#4a6cf7;color:#fff;border-color:#4a6cf7}input,select{width:100%;padding:3px 6px;border:1px solid #cfd3dc;border-radius:3px;font-family:inherit;font-size:11px;background:#fff;min-width:0;box-sizing:border-box}.ds-del{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;background:transparent;border:1px solid #cfd3dc;border-radius:3px;cursor:pointer;color:#888;line-height:1}.ds-del:hover{color:#b00020;border-color:#b00020}.ds-empty{color:#aaa;font-style:italic;padding:4px 0}\n"] }]
+         }] });
+ 
+ /** Snap a coordinate or size value to the nearest multiple of `grid`.
