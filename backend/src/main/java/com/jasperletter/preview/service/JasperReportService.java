@@ -3,6 +3,7 @@ package com.jasperletter.preview.service;
 import com.jasperletter.preview.util.JrxmlFormatUtils;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRXmlDataSource;
+import net.sf.jasperreports.engine.util.JRResourcesUtil;
 import net.sf.jasperreports.repo.FileRepositoryPersistenceServiceFactory;
 import net.sf.jasperreports.repo.FileRepositoryService;
 import net.sf.jasperreports.repo.PersistenceServiceFactory;
@@ -21,6 +22,15 @@ import java.util.*;
 public class JasperReportService {
 
     private static final Logger log = LoggerFactory.getLogger(JasperReportService.class);
+
+    /** Bundle sin claves, usado como reemplazo cuando el resource bundle real referenciado por
+     *  la plantilla no se puede encontrar — ver el punto 4.1 de generateJasperPrint(). */
+    private static final ResourceBundle EMPTY_RESOURCE_BUNDLE = new ListResourceBundle() {
+        @Override
+        protected Object[][] getContents() {
+            return new Object[0][];
+        }
+    };
 
     private final LetterResourceService letterResourceService;
 
@@ -102,6 +112,28 @@ public class JasperReportService {
                 if (adapterFile.exists()) {
                     reportParams.put("net.sf.jasperreports.data.adapter", adapterFile.getAbsolutePath().replace("\\", "/"));
                 }
+            }
+        }
+
+        // 4.1. Si la plantilla referencia un resource bundle (net.sf.jasperreports.resource.bundle,
+        // para expresiones $R{...}) que no existe en ningún lado (classpath ni resources/), JasperReports
+        // lo intenta cargar igual en cada fill y lanza MissingResourceException, tumbando la
+        // previsualización completa aunque el bundle no se use realmente en el contenido visible.
+        // Se resuelve de antemano con la misma utilidad que usa el motor internamente; si falla, se
+        // inyecta un bundle vacío como parámetro para que el fill no vuelva a intentar cargarlo — así
+        // cualquier $R{clave} cae en el manejo de "clave faltante" de JasperReports (más benigno que
+        // "bundle no encontrado"), en vez de abortar la generación del PDF.
+        if (jasperReport.getResourceBundle() != null) {
+            Locale effectiveLocale = reportParams.get(JRParameter.REPORT_LOCALE) instanceof Locale
+                    ? (Locale) reportParams.get(JRParameter.REPORT_LOCALE)
+                    : Locale.getDefault();
+            try {
+                JRResourcesUtil.loadResourceBundle(context, jasperReport.getResourceBundle(), effectiveLocale);
+            } catch (MissingResourceException ex) {
+                log.warn("No se encontró el resource bundle '{}' (locale {}) referenciado por la plantilla; " +
+                        "se omite y se genera la vista previa sin él (los $R{{}} usarán el manejo de clave " +
+                        "faltante de JasperReports).", jasperReport.getResourceBundle(), effectiveLocale);
+                reportParams.put(JRParameter.REPORT_RESOURCE_BUNDLE, EMPTY_RESOURCE_BUNDLE);
             }
         }
 
