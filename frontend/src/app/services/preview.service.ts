@@ -6,6 +6,7 @@ import {
   CreateLetterRequest,
   DataAdapterOptionInfo,
   DataFileInfo,
+  ImportJrxmlRequest,
   LetterDetailResponse,
   LetterResourceInfo,
   SaveLetterRequest,
@@ -73,6 +74,38 @@ export class PreviewService {
 
   createLetter(req: CreateLetterRequest): Observable<LetterDetailResponse> {
     return this.http.post<LetterDetailResponse>(`${this.baseResourcesUrl}/letters/create`, req);
+  }
+
+  importJrxmlLetter(req: ImportJrxmlRequest): Observable<LetterDetailResponse> {
+    return this.http.post<LetterDetailResponse>(`${this.baseResourcesUrl}/letters/import-jrxml`, req);
+  }
+
+  importPdfLetter(
+    letterId: string,
+    file: File,
+    format: 'JR6' | 'JR7',
+    createDataAdapter: boolean,
+    createXmlData: boolean
+  ): Observable<LetterDetailResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('letterId', letterId);
+    formData.append('format', format);
+    formData.append('createDataAdapter', String(createDataAdapter));
+    formData.append('createXmlData', String(createXmlData));
+    return this.http.post<LetterDetailResponse>(`${this.baseResourcesUrl}/letters/import-pdf`, formData);
+  }
+
+  /**
+   * Genera un JRXML de layout estático a partir de un PDF sin crear ninguna carta — para cuando
+   * el usuario elige "cargar sobre la carta actual" en vez de "crear carta nueva".
+   */
+  generateJrxmlFromPdf(file: File, letterId: string, format: 'JR6' | 'JR7'): Observable<{ jrxml: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('letterId', letterId);
+    formData.append('format', format);
+    return this.http.post<{ jrxml: string }>(`${this.baseResourcesUrl}/generate-jrxml-from-pdf`, formData);
   }
 
   getDataAdapters(): Observable<DataAdapterOptionInfo[]> {

@@ -14,6 +14,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { I18nService } from '../../../../../services/i18n.service';
+import { expressionToStaticText, staticTextToExpression } from '../../../../../models/text-expression.model';
 
 /**
  * Modal de edición de texto estático / expresión de campo, con corrector ortográfico nativo
@@ -51,7 +52,7 @@ export class TextEditModalComponent implements OnChanges {
   @Input({ required: true }) kind: 'staticText' | 'textField' = 'staticText';
   @Input({ required: true }) content = '';
 
-  @Output() save = new EventEmitter<string>();
+  @Output() save = new EventEmitter<{ content: string; kind: 'staticText' | 'textField' }>();
   @Output() cancel = new EventEmitter<void>();
 
   @ViewChild('modalTextarea') modalTextareaRef?: ElementRef<HTMLTextAreaElement>;
@@ -59,6 +60,9 @@ export class TextEditModalComponent implements OnChanges {
   private readonly i18n = inject(I18nService);
 
   readonly editedContent = signal<string>('');
+  /** Copia local editable de @Input() kind: el toggle "Convertir a Campo/Estático" la cambia sin
+   *  tocar el @Input (que solo refleja el tipo con el que se abrió el modal). */
+  readonly currentKind = signal<'staticText' | 'textField'>('staticText');
   readonly spellcheckEnabled = signal<boolean>(true);
   readonly currentAppLang = this.i18n.currentLang;
 
@@ -69,6 +73,7 @@ export class TextEditModalComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open) {
       this.editedContent.set(this.content);
+      this.currentKind.set(this.kind);
 
       setTimeout(() => {
         if (this.modalTextareaRef?.nativeElement) {
@@ -78,6 +83,22 @@ export class TextEditModalComponent implements OnChanges {
           textarea.scrollTop = 0;
         }
       }, 60);
+    }
+  }
+
+  /**
+   * Convierte el contenido actual entre texto estático y expresión funcional (ver
+   * text-expression.model.ts). No guarda nada por sí solo — solo cambia lo que se ve en el
+   * textarea y el kind con el que se guardará al presionar Aplicar.
+   */
+  toggleKind(): void {
+    const currentText = this.modalTextareaRef?.nativeElement?.value ?? this.editedContent();
+    if (this.currentKind() === 'staticText') {
+      this.editedContent.set(staticTextToExpression(currentText));
+      this.currentKind.set('textField');
+    } else {
+      this.editedContent.set(expressionToStaticText(currentText));
+      this.currentKind.set('staticText');
     }
   }
 
@@ -125,6 +146,6 @@ export class TextEditModalComponent implements OnChanges {
 
   saveClick(): void {
     const newContent = this.modalTextareaRef?.nativeElement?.value ?? this.editedContent();
-    this.save.emit(newContent);
+    this.save.emit({ content: newContent, kind: this.currentKind() });
   }
 }

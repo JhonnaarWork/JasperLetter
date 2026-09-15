@@ -47,6 +47,13 @@ export interface CreateLetterRequest {
   createXmlData?: boolean;
 }
 
+export interface ImportJrxmlRequest {
+  letterId: string;
+  jrxmlContent: string;
+  createDataAdapter: boolean;
+  createXmlData: boolean;
+}
+
 export interface DataFileInfo {
   fileName: string;
   relativePath: string;

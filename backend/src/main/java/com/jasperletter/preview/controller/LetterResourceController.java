@@ -3,18 +3,25 @@ package com.jasperletter.preview.controller;
 import com.jasperletter.preview.dto.CreateLetterRequest;
 import com.jasperletter.preview.dto.DataAdapterOptionInfo;
 import com.jasperletter.preview.dto.DataFileInfo;
+import com.jasperletter.preview.dto.GeneratedJrxmlResponse;
+import com.jasperletter.preview.dto.ImportJrxmlRequest;
 import com.jasperletter.preview.dto.LetterDetailResponse;
 import com.jasperletter.preview.dto.LetterResourceInfo;
 import com.jasperletter.preview.dto.SaveLetterRequest;
 import com.jasperletter.preview.dto.TestDataAdapterRequest;
 import com.jasperletter.preview.dto.TestDataAdapterResponse;
+import com.jasperletter.preview.exception.ValidationException;
 import com.jasperletter.preview.service.LetterResourceService;
+import com.jasperletter.preview.service.PdfToJrxmlService;
+import com.jasperletter.preview.util.JrxmlFormatUtils;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,9 +42,11 @@ public class LetterResourceController {
 
     private static final Logger log = LoggerFactory.getLogger(LetterResourceController.class);
     private final LetterResourceService letterResourceService;
+    private final PdfToJrxmlService pdfToJrxmlService;
 
-    public LetterResourceController(LetterResourceService letterResourceService) {
+    public LetterResourceController(LetterResourceService letterResourceService, PdfToJrxmlService pdfToJrxmlService) {
         this.letterResourceService = letterResourceService;
+        this.pdfToJrxmlService = pdfToJrxmlService;
     }
 
     /**
@@ -108,6 +117,60 @@ public class LetterResourceController {
     public ResponseEntity<LetterDetailResponse> createLetter(@Valid @RequestBody CreateLetterRequest request) throws IOException {
         LetterDetailResponse detail = letterResourceService.createLetter(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(detail);
+    }
+
+    /**
+     * Importa una carta a partir de un JRXML ya escrito: crea resources/reports/{letterId}/ con
+     * ese JRXML, y opcionalmente Data Adapter + XML de datos base (ver "Generar Datos" en el
+     * frontend para poblarlo con los fields del propio JRXML).
+     */
+    @PostMapping("/letters/import-jrxml")
+    public ResponseEntity<LetterDetailResponse> importJrxml(@Valid @RequestBody ImportJrxmlRequest request) throws IOException {
+        LetterDetailResponse detail = letterResourceService.importLetterFromJrxml(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(detail);
+    }
+
+    /**
+     * Importa una carta generando un JRXML de layout estático a partir de la primera página de
+     * un PDF (ver PdfToJrxmlService) — punto de partida visual, no funcional.
+     */
+    @PostMapping(value = "/letters/import-pdf", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<LetterDetailResponse> importPdf(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("letterId") String letterId,
+            @RequestParam(value = "format", defaultValue = "JR6") String format,
+            @RequestParam(value = "createDataAdapter", defaultValue = "true") boolean createDataAdapter,
+            @RequestParam(value = "createXmlData", defaultValue = "true") boolean createXmlData
+    ) throws IOException {
+        if (file.isEmpty()) {
+            throw new ValidationException("El archivo PDF está vacío.");
+        }
+        LetterDetailResponse detail = letterResourceService.importLetterFromPdf(
+                file.getBytes(), letterId, format, createDataAdapter, createXmlData);
+        return ResponseEntity.status(HttpStatus.CREATED).body(detail);
+    }
+
+    /**
+     * Genera un JRXML de layout estático a partir de un PDF SIN crear ninguna carta — a
+     * diferencia de /letters/import-pdf, este endpoint no toca el disco en absoluto, solo
+     * devuelve el JRXML generado. Lo usa el frontend cuando el usuario elige "cargar sobre la
+     * carta actual" en vez de "crear carta nueva": el JRXML resultante se aplica en memoria
+     * sobre la carta ya abierta, quedando como cambio pendiente por guardar.
+     */
+    @PostMapping(value = "/generate-jrxml-from-pdf", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GeneratedJrxmlResponse> generateJrxmlFromPdf(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "letterId", defaultValue = "CARTA") String letterId,
+            @RequestParam(value = "format", defaultValue = "JR6") String format
+    ) throws IOException {
+        if (file.isEmpty()) {
+            throw new ValidationException("El archivo PDF está vacío.");
+        }
+        String jrxml = pdfToJrxmlService.generateJrxmlFromPdf(file.getBytes(), letterId);
+        if ("JR7".equalsIgnoreCase(format)) {
+            jrxml = JrxmlFormatUtils.convertToJr7(jrxml);
+        }
+        return ResponseEntity.ok(new GeneratedJrxmlResponse(jrxml));
     }
 
     /**

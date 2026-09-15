@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, ElementRef, HostListener, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { I18nService, Language } from './services/i18n.service';
-import { CreateLetterRequest, DataAdapterOptionInfo, DataFileInfo } from './models/letter-resource.model';
+import { CreateLetterRequest, DataAdapterOptionInfo, DataFileInfo, ImportJrxmlRequest } from './models/letter-resource.model';
 import { XmlCodeEditorComponent } from './components/xml-code-editor/xml-code-editor.component';
 import { CreateLetterModalComponent } from './components/create-letter-modal/create-letter-modal.component';
+import { ImportLetterModalComponent } from './components/import-letter-modal/import-letter-modal.component';
 import { VisualEditorPaneComponent } from './features/letter-editor/components/visual-editor-pane/visual-editor-pane.component';
 import { TestResultModalComponent } from './features/letter-editor/components/modals/test-result-modal/test-result-modal.component';
 import { SaveConfirmModalComponent } from './features/letter-editor/components/modals/save-confirm-modal/save-confirm-modal.component';
@@ -40,6 +41,7 @@ import { LetterCatalogService } from './features/letter-editor/state/letter-cata
     FormsModule,
     XmlCodeEditorComponent,
     CreateLetterModalComponent,
+    ImportLetterModalComponent,
     VisualEditorPaneComponent,
     TestResultModalComponent,
     SaveConfirmModalComponent,
@@ -101,6 +103,10 @@ export class AppComponent implements OnInit {
   readonly hasUnsavedChanges = this.letterEditor.hasUnsavedChanges;
   readonly dirtyCount = this.letterEditor.dirtyCount;
 
+  /** Etiqueta de la carta/muestra actualmente abierta, para el modo "cargar en la actual" del
+   *  modal de importación — null cuando no hay ninguna (ahí ese modo ni se ofrece). */
+  readonly currentLetterLabel = computed(() => this.selectedLetterId() ?? this.selectedSampleId());
+
   readonly saveConfirmModalOpen = this.letterEditor.saveConfirmModalOpen;
   readonly saveSelectJrxml = this.letterEditor.saveSelectJrxml;
   readonly saveSelectDataAdapter = this.letterEditor.saveSelectDataAdapter;
@@ -137,11 +143,23 @@ export class AppComponent implements OnInit {
   readonly creatingLetter = signal<boolean>(false);
   readonly createLetterError = signal<string | null>(null);
 
-  // Modal: Cambios sin Guardar (Guard de Navegación) — coordina entre "cambiar de carta" y
-  // "crear carta nueva", por eso queda en el shell y no en una feature específica.
+  // Modal: Importar Carta (JRXML o PDF) — mismo motivo que el modal de Crear Carta arriba.
+  readonly importModalOpen = signal<boolean>(false);
+  readonly importMode = signal<'create' | 'current'>('current');
+  readonly importLetterId = signal<string>('');
+  readonly importFile = signal<File | null>(null);
+  readonly importFormat = signal<'JR6' | 'JR7'>('JR6');
+  readonly importCreateAdapter = signal<boolean>(true);
+  readonly importCreateXml = signal<boolean>(true);
+  readonly importingLetter = signal<boolean>(false);
+  readonly importLetterError = signal<string | null>(null);
+
+  // Modal: Cambios sin Guardar (Guard de Navegación) — coordina entre "cambiar de carta",
+  // "crear carta nueva" e "importar carta", por eso queda en el shell y no en una feature
+  // específica.
   readonly unsavedModalOpen = signal<boolean>(false);
   readonly pendingTargetSelection = signal<string | null>(null);
-  readonly pendingAction = signal<'select' | 'create' | null>(null);
+  readonly pendingAction = signal<'select' | 'create' | 'import' | null>(null);
 
   // Pestaña activa en el panel izquierdo: 'editor' | 'jrxmlCode' | 'xmlData' | 'dataAdapter'
   readonly leftTab = signal<'editor' | 'xmlData' | 'jrxmlCode' | 'dataAdapter'>('editor');
@@ -358,6 +376,118 @@ export class AppComponent implements OnInit {
   }
 
   // ==========================================================================
+  // IMPORTAR CARTA (JRXML O PDF)
+  // ==========================================================================
+  openImportModal(): void {
+    this.importMode.set(this.currentLetterLabel() ? 'current' : 'create');
+    this.importLetterId.set('');
+    this.importFile.set(null);
+    this.importFormat.set('JR6');
+    this.importCreateAdapter.set(true);
+    this.importCreateXml.set(true);
+    this.importLetterError.set(null);
+    this.importModalOpen.set(true);
+  }
+
+  closeImportModal(): void {
+    this.importModalOpen.set(false);
+  }
+
+  requestImportModal(): void {
+    if (this.hasUnsavedChanges()) {
+      this.pendingAction.set('import');
+      this.unsavedModalOpen.set(true);
+      return;
+    }
+    this.openImportModal();
+  }
+
+  async submitImportLetter(): Promise<void> {
+    const file = this.importFile();
+    if (!file) {
+      this.importLetterError.set('Debes seleccionar un archivo .jrxml o .pdf.');
+      return;
+    }
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.jrxml') && !fileName.endsWith('.pdf')) {
+      this.importLetterError.set('El archivo debe tener extensión .jrxml o .pdf.');
+      return;
+    }
+
+    if (this.importMode() === 'current') {
+      await this.submitImportIntoCurrentLetter(file, fileName);
+    } else {
+      await this.submitImportAsNewLetter(file, fileName);
+    }
+  }
+
+  /** Modo "cargar en la actual": sustituye el JRXML de la carta/muestra ya abierta, sin crear
+   *  ninguna carta ni pedir un ID — ver LetterEditorStore.loadJrxmlIntoCurrentLetter(). */
+  private async submitImportIntoCurrentLetter(file: File, fileName: string): Promise<void> {
+    this.importingLetter.set(true);
+    this.importLetterError.set(null);
+
+    try {
+      if (fileName.endsWith('.jrxml')) {
+        const jrxmlContent = await file.text();
+        this.letterEditor.loadJrxmlIntoCurrentLetter(jrxmlContent);
+      } else {
+        const currentId = this.currentLetterLabel() || 'CARTA';
+        await this.letterEditor.loadPdfIntoCurrentLetter(file, currentId, this.importFormat());
+      }
+      this.importingLetter.set(false);
+      this.closeImportModal();
+    } catch (err: any) {
+      this.importingLetter.set(false);
+      this.importLetterError.set(err.error?.message || err.message || 'Error al importar la carta.');
+    }
+  }
+
+  /** Modo "crear carta nueva": comportamiento original, crea una carta distinta en el
+   *  repositorio a partir del archivo importado. */
+  private async submitImportAsNewLetter(file: File, fileName: string): Promise<void> {
+    const rawId = this.importLetterId();
+    if (!rawId || !rawId.trim()) {
+      this.importLetterError.set('Debes ingresar un código/identificador para la carta.');
+      return;
+    }
+    const cleanId = rawId.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    if (!cleanId) {
+      this.importLetterError.set('El identificador sólo puede contener letras, números, guiones y guiones bajos.');
+      return;
+    }
+
+    this.importingLetter.set(true);
+    this.importLetterError.set(null);
+
+    try {
+      if (fileName.endsWith('.jrxml')) {
+        const jrxmlContent = await file.text();
+        const req: ImportJrxmlRequest = {
+          letterId: cleanId,
+          jrxmlContent,
+          createDataAdapter: this.importCreateAdapter(),
+          createXmlData: this.importCreateXml()
+        };
+        await this.letterEditor.importJrxmlLetter(req);
+      } else {
+        await this.letterEditor.importPdfLetter(
+          cleanId,
+          file,
+          this.importFormat(),
+          this.importCreateAdapter(),
+          this.importCreateXml()
+        );
+      }
+      this.importingLetter.set(false);
+      this.closeImportModal();
+    } catch (err: any) {
+      this.importingLetter.set(false);
+      this.importLetterError.set(err.error?.message || err.message || 'Error al importar la carta.');
+    }
+  }
+
+  // ==========================================================================
   // GUARD DE NAVEGACIÓN ANTE CAMBIOS SIN GUARDAR
   // ==========================================================================
   requestChangeSelection(val: string): void {
@@ -388,6 +518,8 @@ export class AppComponent implements OnInit {
 
       if (pAction === 'create') {
         this.openCreateLetterModal();
+      } else if (pAction === 'import') {
+        this.openImportModal();
       } else if (target !== null) {
         this.onSelectionChange(target);
       }
@@ -410,6 +542,8 @@ export class AppComponent implements OnInit {
       if (success) {
         if (pAction === 'create') {
           this.openCreateLetterModal();
+        } else if (pAction === 'import') {
+          this.openImportModal();
         } else if (target !== null) {
           this.onSelectionChange(target);
         }

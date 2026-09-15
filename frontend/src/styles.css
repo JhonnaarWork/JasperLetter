@@ -352,6 +352,12 @@ lib-jasper-toolbar .zoom + .sep {
   color: #991B1B;
 }
 
+.box-info {
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  color: #1E40AF;
+}
+
 .da-modal-footer {
   padding: 10px 20px;
   background: #F8FAFC;

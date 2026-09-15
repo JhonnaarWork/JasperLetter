@@ -188,9 +188,8 @@ export class VisualEditorPaneComponent implements OnInit, OnChanges, OnDestroy {
     this.getEditorStore()?.stopEditing();
   }
 
-  handleTextModalSave(newContent: string): void {
+  handleTextModalSave(result: { content: string; kind: 'staticText' | 'textField' }): void {
     const store = this.getEditorStore();
-    const kind = this.textModalKind();
 
     if (store) {
       const currentSelections = store.selections();
@@ -198,11 +197,14 @@ export class VisualEditorPaneComponent implements OnInit, OnChanges, OnDestroy {
         store.select(this.activeEditingPath);
       }
 
-      if (kind === 'staticText') {
-        store.updateSelected((el: any) => ({ ...el, text: newContent }));
-      } else if (kind === 'textField') {
-        store.updateSelected((el: any) => ({ ...el, expression: newContent }));
-      }
+      // Se quitan text/expression del resto antes de reasignar: al convertir de estático a
+      // funcional (o viceversa) el campo del kind anterior no debe quedar colgado en el elemento.
+      store.updateSelected((el: any) => {
+        const { text, expression, ...rest } = el;
+        return result.kind === 'staticText'
+          ? { ...rest, kind: 'staticText', text: result.content }
+          : { ...rest, kind: 'textField', expression: result.content };
+      });
     }
 
     this.closeTextModal();

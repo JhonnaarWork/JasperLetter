@@ -6,10 +6,10 @@
         <div class="modal-title-group">
           <div
             class="modal-icon-badge"
-            [class.badge-static]="kind === 'staticText'"
-            [class.badge-expr]="kind === 'textField'"
+            [class.badge-static]="currentKind() === 'staticText'"
+            [class.badge-expr]="currentKind() === 'textField'"
           >
-            @if (kind === 'staticText') {
+            @if (currentKind() === 'staticText') {
               <span class="type-icon">T</span>
             } @else {
               <span class="type-icon">fx</span>
@@ -17,19 +17,33 @@
           </div>
           <div>
             <h3 class="modal-title">
-              {{ kind === 'staticText' ? t('modal.editTextTitle') : t('modal.editExprTitle') }}
+              {{ currentKind() === 'staticText' ? t('modal.editTextTitle') : t('modal.editExprTitle') }}
             </h3>
             <span class="modal-subtitle">
-              {{ kind === 'staticText' ? t('modal.staticTextDesc') : t('modal.textFieldDesc') }}
+              {{ currentKind() === 'staticText' ? t('modal.staticTextDesc') : t('modal.textFieldDesc') }}
             </span>
           </div>
         </div>
+        <button
+          type="button"
+          class="kind-toggle-btn"
+          (click)="toggleKind()"
+          [title]="currentKind() === 'staticText' ? t('modal.convertToFieldTooltip') : t('modal.convertToStaticTooltip')"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="17 1 21 5 17 9"></polyline>
+            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+            <polyline points="7 23 3 19 7 15"></polyline>
+            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+          </svg>
+          <span>{{ currentKind() === 'staticText' ? t('modal.convertToField') : t('modal.convertToStatic') }}</span>
+        </button>
         <button type="button" class="modal-close-btn" (click)="cancel.emit()" title="Cerrar (Esc)">×</button>
       </div>
 
       <!-- Cuerpo del Modal -->
       <div class="modal-body">
-        @if (kind === 'textField') {
+        @if (currentKind() === 'textField') {
           <!-- Accesos rápidos para expresiones -->
           <div class="quick-inserts">
             <span class="quick-insert-label">{{ t('modal.quickInsert') }}</span>
@@ -81,7 +95,7 @@
           <textarea
             #modalTextarea
             class="modal-textarea"
-            [class.code-font]="kind === 'textField'"
+            [class.code-font]="currentKind() === 'textField'"
             [value]="editedContent()"
             [attr.spellcheck]="spellcheckEnabled()"
             [attr.lang]="spellcheckEnabled() ? currentAppLang() : null"

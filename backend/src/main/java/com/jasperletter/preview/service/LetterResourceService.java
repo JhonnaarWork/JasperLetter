@@ -3,6 +3,7 @@ package com.jasperletter.preview.service;
 import com.jasperletter.preview.dto.CreateLetterRequest;
 import com.jasperletter.preview.dto.DataAdapterOptionInfo;
 import com.jasperletter.preview.dto.DataFileInfo;
+import com.jasperletter.preview.dto.ImportJrxmlRequest;
 import com.jasperletter.preview.dto.LetterDetailResponse;
 import com.jasperletter.preview.dto.LetterResourceInfo;
 import com.jasperletter.preview.dto.TestDataAdapterResponse;
@@ -38,9 +39,11 @@ public class LetterResourceService {
     private static final Logger log = LoggerFactory.getLogger(LetterResourceService.class);
 
     private final DataFileResolver dataFileResolver;
+    private final PdfToJrxmlService pdfToJrxmlService;
 
-    public LetterResourceService(DataFileResolver dataFileResolver) {
+    public LetterResourceService(DataFileResolver dataFileResolver, PdfToJrxmlService pdfToJrxmlService) {
         this.dataFileResolver = dataFileResolver;
+        this.pdfToJrxmlService = pdfToJrxmlService;
     }
 
     /**
@@ -585,28 +588,80 @@ public class LetterResourceService {
      * Crea una nueva carta desde cero en resources/reports/{letterId}/
      */
     public LetterDetailResponse createLetter(CreateLetterRequest req) throws IOException {
-        if (req.letterId() == null || req.letterId().trim().isEmpty()) {
+        String cleanId = validateAndCleanLetterId(req.letterId());
+        File letterDir = createNewLetterDir(cleanId);
+
+        String format = req.format() != null && "JR7".equalsIgnoreCase(req.format()) ? "JR7" : "JR6";
+        String jrxmlContent = JrxmlFormatUtils.createDefaultJrxml(cleanId, format);
+
+        return finishLetterCreation(cleanId, letterDir, jrxmlContent, req.createDataAdapter(), req.createXmlData());
+    }
+
+    /**
+     * Importa una carta a partir de un JRXML ya escrito (p.ej. exportado de Jaspersoft Studio):
+     * crea el directorio de la carta y, opcionalmente, su Data Adapter y un XML de datos base,
+     * igual que createLetter() pero sin generar el JRXML desde la plantilla en blanco.
+     */
+    public LetterDetailResponse importLetterFromJrxml(ImportJrxmlRequest req) throws IOException {
+        String cleanId = validateAndCleanLetterId(req.letterId());
+        if (req.jrxmlContent() == null || req.jrxmlContent().trim().isEmpty()) {
+            throw new ValidationException("El contenido del JRXML a importar está vacío.");
+        }
+        File letterDir = createNewLetterDir(cleanId);
+
+        return finishLetterCreation(cleanId, letterDir, req.jrxmlContent(), req.createDataAdapter(), req.createXmlData());
+    }
+
+    /**
+     * Importa una carta generando un JRXML de layout estático a partir de un PDF (ver
+     * PdfToJrxmlService) — punto de partida visual, no funcional: no hay $F{...} ni bandas
+     * repetibles, el usuario las agrega después.
+     */
+    public LetterDetailResponse importLetterFromPdf(byte[] pdfBytes, String letterId, String format,
+                                                      boolean createDataAdapter, boolean createXmlData) throws IOException {
+        String cleanId = validateAndCleanLetterId(letterId);
+        File letterDir = createNewLetterDir(cleanId);
+
+        String jrxmlContent = pdfToJrxmlService.generateJrxmlFromPdf(pdfBytes, cleanId);
+        if ("JR7".equalsIgnoreCase(format)) {
+            jrxmlContent = JrxmlFormatUtils.convertToJr7(jrxmlContent);
+        }
+
+        return finishLetterCreation(cleanId, letterDir, jrxmlContent, createDataAdapter, createXmlData);
+    }
+
+    private String validateAndCleanLetterId(String rawLetterId) {
+        if (rawLetterId == null || rawLetterId.trim().isEmpty()) {
             throw new ValidationException("El ID de la carta es obligatorio.");
         }
-        String cleanId = req.letterId().trim().toUpperCase().replaceAll("[^A-Z0-9_-]", "");
+        String cleanId = rawLetterId.trim().toUpperCase().replaceAll("[^A-Z0-9_-]", "");
         if (cleanId.isEmpty()) {
             throw new ValidationException("El ID de la carta contiene caracteres inválidos.");
         }
+        return cleanId;
+    }
 
+    private File createNewLetterDir(String cleanId) {
         File letterDir = new File(getResourcesDir(), RepositoryLayout.letterDirPath(cleanId));
         if (letterDir.exists()) {
             throw new ValidationException("Ya existe una carta con el identificador " + cleanId);
         }
         letterDir.mkdirs();
+        return letterDir;
+    }
 
-        String format = req.format() != null && "JR7".equalsIgnoreCase(req.format()) ? "JR7" : "JR6";
-        String jrxmlContent = JrxmlFormatUtils.createDefaultJrxml(cleanId, format);
-
+    /**
+     * Cola compartida por createLetter()/importLetterFromJrxml()/importLetterFromPdf(): dado un
+     * JRXML ya resuelto (en blanco, importado o generado desde un PDF), escribe opcionalmente el
+     * Data Adapter e inyecta su referencia, guarda el JRXML, escribe opcionalmente un XML de
+     * datos base, copia el logo de muestra si existe, y devuelve el detalle de la carta creada.
+     */
+    private LetterDetailResponse finishLetterCreation(String cleanId, File letterDir, String jrxmlContent,
+                                                        boolean createDataAdapter, boolean createXmlData) throws IOException {
         // Si se solicitó crear Data Adapter
-        String adapterContent = null;
-        if (req.createDataAdapter()) {
+        if (createDataAdapter) {
             String xmlLocation = RepositoryLayout.displayDataXmlPath(cleanId + ".xml");
-            adapterContent = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            String adapterContent = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                     "<xmlDataAdapter class=\"net.sf.jasperreports.data.xml.XmlDataAdapterImpl\">\n" +
                     "  <name>xmlDataAdapter_" + cleanId + "</name>\n" +
                     "  <dataFile xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"repositoryDataLocation\">\n" +
@@ -630,7 +685,7 @@ public class LetterResourceService {
         Files.writeString(jrxmlFile.toPath(), jrxmlContent, StandardCharsets.UTF_8);
 
         // Si se solicitó crear Datos XML
-        if (req.createXmlData()) {
+        if (createXmlData) {
             File xmlDataDir = new File(getResourcesDir(), RepositoryLayout.DATA_XML_DIR);
             if (!xmlDataDir.exists()) {
                 xmlDataDir.mkdirs();

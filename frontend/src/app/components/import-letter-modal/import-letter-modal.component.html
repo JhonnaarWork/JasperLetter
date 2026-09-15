@@ -1,0 +1,171 @@
+<div class="da-modal-overlay" (click)="close.emit()">
+  <div class="da-modal-dialog create-letter-dialog" (click)="$event.stopPropagation()">
+    <div class="da-modal-header">
+      <div class="da-modal-header-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F5B9E" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+      </div>
+      <div class="da-modal-header-title">
+        <h3>{{ t('modal.importLetterTitle') }}</h3>
+        <span class="modal-dialog-subtitle">{{ t('modal.importLetterDesc') }}</span>
+      </div>
+      <button type="button" class="da-modal-close-btn" (click)="close.emit()">×</button>
+    </div>
+
+    <div class="da-modal-body">
+      @if (error) {
+        <div class="da-modal-message-box box-error">
+          <p>{{ error }}</p>
+        </div>
+      }
+
+      @if (currentLetterLabel) {
+        <div class="form-field-group">
+          <label class="form-label">{{ t('modal.importModeLabel') }}</label>
+          <div class="format-options-row">
+            <label class="radio-card" [class.selected]="mode === 'current'">
+              <input
+                type="radio"
+                name="importMode"
+                value="current"
+                [checked]="mode === 'current'"
+                (change)="modeChange.emit('current')"
+              />
+              <div class="radio-card-content">
+                <strong>{{ t('modal.importModeCurrentTitle') }}</strong>
+                <span>{{ t('modal.importModeCurrentDesc', currentLetterLabel) }}</span>
+              </div>
+            </label>
+            <label class="radio-card" [class.selected]="mode === 'create'">
+              <input
+                type="radio"
+                name="importMode"
+                value="create"
+                [checked]="mode === 'create'"
+                (change)="modeChange.emit('create')"
+              />
+              <div class="radio-card-content">
+                <strong>{{ t('modal.importModeCreateTitle') }}</strong>
+                <span>{{ t('modal.importModeCreateDesc') }}</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      }
+
+      @if (mode === 'create') {
+        <div class="form-field-group">
+          <label class="form-label" for="import-letter-id">
+            {{ t('modal.letterIdLabel') }} <span class="da-req">*</span>
+          </label>
+          <input
+            id="import-letter-id"
+            type="text"
+            class="form-input code-font uppercase-input"
+            [ngModel]="letterId"
+            (ngModelChange)="letterIdChange.emit($event)"
+            placeholder="Ej: ETIPLET004"
+            autofocus
+          />
+        </div>
+      }
+
+      <div class="form-field-group">
+        <label class="form-label" for="import-letter-file">
+          {{ t('modal.importFileLabel') }} <span class="da-req">*</span>
+        </label>
+        <input id="import-letter-file" type="file" class="form-input" accept=".jrxml,.pdf" (change)="onFileSelected($event)" />
+        @if (file && !fileKind) {
+          <span class="form-hint">{{ t('modal.importFileInvalid') }}</span>
+        } @else if (fileKind === 'jrxml') {
+          <span class="form-hint">{{ t('modal.importFileJrxmlHint') }}</span>
+        } @else if (fileKind === 'pdf') {
+          <span class="form-hint">{{ t('modal.importFilePdfHint') }}</span>
+        } @else {
+          <span class="form-hint">{{ t('modal.importFileHint') }}</span>
+        }
+      </div>
+
+      @if (fileKind === 'pdf') {
+        <div class="form-field-group">
+          <label class="form-label">{{ t('modal.formatLabel') }}</label>
+          <div class="format-options-row">
+            <label class="radio-card" [class.selected]="format === 'JR6'">
+              <input
+                type="radio"
+                name="importLetterFormat"
+                value="JR6"
+                [checked]="format === 'JR6'"
+                (change)="formatChange.emit('JR6')"
+              />
+              <div class="radio-card-content">
+                <strong>JasperReports 6 (Tradicional)</strong>
+                <span>Recomendado para servidores de producción existentes</span>
+              </div>
+            </label>
+            <label class="radio-card" [class.selected]="format === 'JR7'">
+              <input
+                type="radio"
+                name="importLetterFormat"
+                value="JR7"
+                [checked]="format === 'JR7'"
+                (change)="formatChange.emit('JR7')"
+              />
+              <div class="radio-card-content">
+                <strong>JasperReports 7 (Moderno)</strong>
+                <span>Formato con esquema moderno JasperReports 7</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      }
+
+      @if (mode === 'create') {
+        <div class="form-checkbox-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [checked]="createAdapter"
+              (change)="createAdapterChange.emit(!createAdapter)"
+            />
+            <span>{{ t('modal.createAdapterLabel') }}</span>
+          </label>
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [checked]="createXmlData"
+              (change)="createXmlDataChange.emit(!createXmlData)"
+            />
+            <span>{{ t('modal.createXmlLabel') }}</span>
+          </label>
+        </div>
+      } @else {
+        <div class="da-modal-message-box box-info">
+          <p>{{ t('modal.importModeCurrentWarning') }}</p>
+        </div>
+      }
+    </div>
+
+    <div class="da-modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="close.emit()">
+        {{ t('modal.cancel') }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="importing || !fileKind || (mode === 'create' && !letterId.trim())"
+        (click)="submitImport.emit()"
+      >
+        @if (importing) {
+          <span class="spinner-inline"></span>
+          <span>{{ t('modal.importing') }}</span>
+        } @else {
+          <span>{{ t('modal.importBtn') }}</span>
+        }
+      </button>
+    </div>
+  </div>
+</div>

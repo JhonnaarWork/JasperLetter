@@ -84,6 +84,30 @@
   display: block;
 }
 
+.kind-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Soho', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 14px;
+  background: #FFFFFF;
+  border: 1px solid #D5DCE0;
+  color: #2E6C99;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.kind-toggle-btn:hover {
+  background: #2E6C99;
+  color: #FFFFFF;
+  border-color: #2E6C99;
+  box-shadow: 0 1px 3px rgba(46, 108, 153, 0.25);
+}
+
 .modal-close-btn {
   background: transparent;
   border: none;

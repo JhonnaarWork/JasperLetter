@@ -17,6 +17,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring.boot.version>3.3.4</spring.boot.version>
         <jasperreports.version>7.0.3</jasperreports.version>
+        <pdfbox.version>3.0.6</pdfbox.version>
     </properties>
 
     <dependencyManagement>
@@ -91,6 +92,13 @@
             <groupId>net.sf.jasperreports</groupId>
             <artifactId>jasperreports-functions</artifactId>
             <version>${jasperreports.version}</version>
+        </dependency>
+
+        <!-- Apache PDFBox: extracción de texto/posición para "Importar PDF" -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${pdfbox.version}</version>
         </dependency>
 
         <!-- Spring Boot Test -->

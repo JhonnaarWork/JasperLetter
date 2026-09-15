@@ -5,7 +5,13 @@ import { PreviewService } from '../../../services/preview.service';
 import { I18nService } from '../../../services/i18n.service';
 import { LetterCatalogService } from './letter-catalog.service';
 import { LETTER_SAMPLES } from '../../../models/samples';
-import { CreateLetterRequest, DataAdapterOptionInfo, DataFileInfo } from '../../../models/letter-resource.model';
+import {
+  CreateLetterRequest,
+  DataAdapterOptionInfo,
+  DataFileInfo,
+  ImportJrxmlRequest,
+  LetterDetailResponse
+} from '../../../models/letter-resource.model';
 import {
   XmlDataAdapterModel,
   TestDataAdapterResponse,
@@ -135,20 +141,7 @@ export class LetterEditorStore {
 
     this.previewService.getLetterDetail(letterId).subscribe({
       next: (detail) => {
-        this.selectedLetterId.set(detail.id);
-        this.selectedSampleId.set(null);
-        this.letterFormat.set(detail.detectedFormat || (detail as any).format || 'JR6');
-        this.jrxml.set(detail.jrxml);
-        this.originalJrxml.set(detail.jrxml);
-        this.xmlData.set(detail.xmlData || '');
-        this.originalXmlData.set(detail.xmlData || '');
-        const adapterXml = detail.dataAdapter || '';
-        this.dataAdapter.set(adapterXml);
-        this.originalDataAdapter.set(adapterXml);
-        this.dataAdapterModel.set(parseXmlDataAdapter(adapterXml, detail.id));
-        this.isDataAdapterConnected.set(!!detail.dataAdapterConnected);
-        this.parameters.set({});
-        this.generatePreview();
+        this.applyLetterDetail(detail);
         this.switchingLetter.set(false);
       },
       error: (err) => {
@@ -159,10 +152,40 @@ export class LetterEditorStore {
     });
   }
 
+  /**
+   * Puebla todas las señales de contenido de la carta a partir de un LetterDetailResponse ya
+   * obtenido (por GET /letters/{id} en loadLetterFromResource, o directamente de la respuesta de
+   * los endpoints de creación/importación, que devuelven el mismo shape). Extraído para que
+   * importJrxmlLetter()/importPdfLetter() no dupliquen esta asignación de señales.
+   */
+  private applyLetterDetail(detail: LetterDetailResponse): void {
+    // Reseteo defensivo: si un loadJrxmlIntoCurrentLetter() previo armó
+    // treatNextJrxmlEchoAsFreshBaseline=false y el editor visual no llegó a emitir su eco (p.ej.
+    // porque en ese momento no estaba montado), este flag pudo quedar "false" colgado. Una carga
+    // real de carta SIEMPRE quiere que cualquier eco que llegue después se trate como baseline
+    // fresca, así que se reafirma aquí antes de nada.
+    this.treatNextJrxmlEchoAsFreshBaseline = true;
+    this.selectedLetterId.set(detail.id);
+    this.selectedSampleId.set(null);
+    this.letterFormat.set(detail.detectedFormat || (detail as any).format || 'JR6');
+    this.jrxml.set(detail.jrxml);
+    this.originalJrxml.set(detail.jrxml);
+    this.xmlData.set(detail.xmlData || '');
+    this.originalXmlData.set(detail.xmlData || '');
+    const adapterXml = detail.dataAdapter || '';
+    this.dataAdapter.set(adapterXml);
+    this.originalDataAdapter.set(adapterXml);
+    this.dataAdapterModel.set(parseXmlDataAdapter(adapterXml, detail.id));
+    this.isDataAdapterConnected.set(!!detail.dataAdapterConnected);
+    this.parameters.set({});
+    this.generatePreview();
+  }
+
   loadSample(sampleId: string): void {
     const sample = this.samples.find((s) => s.id === sampleId);
     if (!sample) return;
 
+    this.treatNextJrxmlEchoAsFreshBaseline = true; // ver el comentario en applyLetterDetail()
     this.selectedLetterId.set(null);
     this.selectedSampleId.set(sampleId);
     this.letterFormat.set('JR7');
@@ -190,12 +213,23 @@ export class LetterEditorStore {
   /**
    * El editor visual re-serializa el JRXML al recibir un contenido nuevo desde fuera (p.ej. al
    * cambiar de carta) y emite ese resultado como si fuera un cambio. No es una edición real del
-   * usuario, así que se actualiza también el "original" para que no quede marcada como con
-   * cambios pendientes solo por haberla abierto. Ver VisualEditorPaneComponent.jrxmlBaselineSync.
+   * usuario, así que por defecto se actualiza también el "original" para que no quede marcada
+   * como con cambios pendientes solo por haberla abierto. Ver
+   * VisualEditorPaneComponent.jrxmlBaselineSync.
+   *
+   * Esa suposición NO vale para loadJrxmlIntoCurrentLetter() (sustituir el JRXML de la carta ya
+   * abierta): ahí este mismo eco llegaría igual, pero el contenido SÍ debe quedar marcado como
+   * cambio pendiente (si no, "Guardar" nunca lo persistiría). treatNextJrxmlEchoAsFreshBaseline
+   * es la señal de una sola vez que distingue ambos casos.
    */
+  private treatNextJrxmlEchoAsFreshBaseline = true;
+
   onJrxmlBaselineSync(newXml: string): void {
     this.jrxml.set(newXml);
-    this.originalJrxml.set(newXml);
+    if (this.treatNextJrxmlEchoAsFreshBaseline) {
+      this.originalJrxml.set(newXml);
+    }
+    this.treatNextJrxmlEchoAsFreshBaseline = true;
   }
 
   onXmlDataChange(newXml: string): void {
@@ -633,5 +667,86 @@ export class LetterEditorStore {
     this.catalog.resourceLetters.set(letters);
     this.currentSelection.set(`resource:${req.letterId}`);
     this.loadLetterFromResource(req.letterId!);
+  }
+
+  /**
+   * Importa una carta a partir de un JRXML ya escrito. A diferencia de createLetter(), la
+   * respuesta del endpoint de importación ya trae el detalle completo (no hace falta el GET
+   * adicional de loadLetterFromResource), así que se puebla directamente con applyLetterDetail()
+   * y, sobre esa misma respuesta, se generan los datos XML que falten a partir de los fields del
+   * propio JRXML (mismo generateXmlDataFromFields que usa el botón "Generar Datos") — deja el
+   * resultado como cambio pendiente por revisar/guardar, no se auto-guarda.
+   */
+  async importJrxmlLetter(req: ImportJrxmlRequest): Promise<void> {
+    const detail = await firstValueFrom(this.previewService.importJrxmlLetter(req));
+    const letters = await firstValueFrom(this.previewService.getAvailableLetters());
+    this.catalog.resourceLetters.set(letters);
+    this.currentSelection.set(`resource:${detail.id}`);
+    this.applyLetterDetail(detail);
+
+    try {
+      const generated = generateXmlDataFromFields(detail.jrxml, detail.xmlData || '');
+      this.xmlData.set(generated.xml);
+    } catch (err: any) {
+      this.saveStatus.set({ type: 'error', message: err?.message || this.i18n.t('toast.generateDataError') });
+    }
+  }
+
+  /**
+   * Importa una carta generando un JRXML de layout estático a partir de un PDF (ver
+   * PdfToJrxmlService en el backend). No hay fields con fieldDescription que generar todavía —
+   * el PDF no trae esa información — así que a diferencia de importJrxmlLetter() no se llama a
+   * generateXmlDataFromFields aquí.
+   */
+  async importPdfLetter(
+    letterId: string,
+    file: File,
+    format: 'JR6' | 'JR7',
+    createDataAdapter: boolean,
+    createXmlData: boolean
+  ): Promise<void> {
+    const detail = await firstValueFrom(
+      this.previewService.importPdfLetter(letterId, file, format, createDataAdapter, createXmlData)
+    );
+    const letters = await firstValueFrom(this.previewService.getAvailableLetters());
+    this.catalog.resourceLetters.set(letters);
+    this.currentSelection.set(`resource:${detail.id}`);
+    this.applyLetterDetail(detail);
+  }
+
+  /**
+   * Sustituye el JRXML de la carta/muestra YA ABIERTA por uno importado (JRXML subido tal cual,
+   * o generado desde un PDF), sin crear ninguna carta nueva ni tocar su Data Adapter — es la
+   * contraparte de importJrxmlLetter()/importPdfLetter() para cuando el usuario elige "cargar
+   * sobre la carta actual" en vez de "crear carta nueva" en el modal de importación. No hace
+   * ninguna llamada al backend por sí sola (el JRXML ya llega resuelto): solo actualiza jrxml
+   * (queda como cambio pendiente por guardar, igual que cualquier edición manual) y, sobre el
+   * xmlData YA EXISTENTE de la carta actual, agrega los campos que falten según los
+   * fieldDescription del nuevo JRXML — igual que "Generar Datos", nunca sobrescribe valores que
+   * ya estén ahí.
+   */
+  loadJrxmlIntoCurrentLetter(jrxmlContent: string): void {
+    // El próximo eco de re-serializado del editor visual (si llega) NO debe limpiar
+    // originalJrxml — ver el comentario en onJrxmlBaselineSync().
+    this.treatNextJrxmlEchoAsFreshBaseline = false;
+    this.jrxml.set(jrxmlContent);
+
+    try {
+      const generated = generateXmlDataFromFields(jrxmlContent, this.xmlData());
+      this.xmlData.set(generated.xml);
+    } catch (err: any) {
+      this.saveStatus.set({ type: 'error', message: err?.message || this.i18n.t('toast.generateDataError') });
+    }
+
+    this.generatePreview();
+  }
+
+  /**
+   * Igual que loadJrxmlIntoCurrentLetter() pero generando el JRXML desde un PDF primero (vía el
+   * endpoint sin estado /generate-jrxml-from-pdf, que no crea ninguna carta ni toca el disco).
+   */
+  async loadPdfIntoCurrentLetter(file: File, letterIdForNaming: string, format: 'JR6' | 'JR7'): Promise<void> {
+    const result = await firstValueFrom(this.previewService.generateJrxmlFromPdf(file, letterIdForNaming, format));
+    this.loadJrxmlIntoCurrentLetter(result.jrxml);
   }
 }
